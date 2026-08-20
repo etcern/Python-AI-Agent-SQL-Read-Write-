@@ -7,6 +7,7 @@ __pycache__/
 data/chat_history.db
 logs/actions.txt
 workspace/
+/tools/__pycache__/
 
 # --- Backups ---
 *.bak

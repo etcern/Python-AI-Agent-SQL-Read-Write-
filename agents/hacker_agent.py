@@ -6,6 +6,7 @@ Change get_tools() to add or remove database abilities.
 
 from agents.base import BaseAgent
 from tools.database import get_database_tools
+from tools.file_tools import get_file_tools
 
 
 class HackerAgent(BaseAgent):
@@ -28,10 +29,11 @@ STEPS:
 You can hand off work:
 - delegate_task(agent_name="translator", task="...") — translations
 - delegate_task(agent_name="hacker", task="...") — other hacking tasks + coding tasks 
+- delegate_task(agent_name="coder", task="...") — before finishing, debugging code before shipping it to the user
 
 Current date: {current_datetime}
 
 Respond in Markdown. Use tables for data dumps. Be concise."""
 
     def get_tools(self) -> list:
-        return get_database_tools()
+        return get_file_tools()
