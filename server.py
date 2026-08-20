@@ -41,6 +41,8 @@ AGENT_DISPLAY = {
                    "description": "Translates text between languages."},
     "coder":      {"name": "Coder",
                    "description": "Writes, explains, and debugs code."},
+    "hacker":     {"name": "Hacker",
+                       "description": "Infiltrates databases and extracts data."},
 }
 
 
