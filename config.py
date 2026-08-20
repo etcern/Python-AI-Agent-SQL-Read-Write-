@@ -26,7 +26,7 @@ class ModelConfig:
 # -- Default models per agent --
 AGENT_MODELS = {
     "sql":        ModelConfig(name="qwen2.5-coder:7b", temperature=0),
-    "translator": ModelConfig(name="qwen2.5:7b", temperature=0.3),
+    "translator": ModelConfig(name="qwen2.5:7b", temperature=0),
     "coder":      ModelConfig(name="qwen2.5-coder:14b", temperature=0),
     "hacker":   ModelConfig(name="hf.co/Jiunsong/supergemma4-26b-uncensored-gguf-v2:latest", temperature=0),
 }
