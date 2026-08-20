@@ -1,831 +1,695 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QueryMaster - Visual Guide</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
-<style>
-  :root {
-    --blue: #3b82f6;
-    --green: #22c55e;
-    --orange: #f97316;
-    --purple: #a855f7;
-    --red: #ef4444;
-    --teal: #14b8a6;
-    --yellow: #eab308;
-    --pink: #ec4899;
-    --slate: #64748b;
-    --dark: #1e293b;
-    --card: #ffffff;
-    --bg: #f1f5f9;
-    --border: #e2e8f0;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'Roboto', 'Segoe UI', system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--dark);
-    line-height: 1.6;
-  }
-
-  /* ---- NAV ---- */
-  nav {
-    position: sticky; top: 0; z-index: 100;
-    background: var(--dark);
-    color: #fff;
-    display: flex; flex-wrap: wrap; gap: 4px;
-    padding: 12px 24px;
-    box-shadow: 0 2px 12px rgba(0,0,0,.25);
-  }
-  nav a {
-    color: #cbd5e1; text-decoration: none; font-size: 14px;
-    padding: 6px 14px; border-radius: 6px;
-  }
-  nav a:hover, nav a.active { background: var(--blue); color: #fff; }
-
-  /* ---- SECTIONS ---- */
-  section {
-    max-width: 1100px; margin: 0 auto;
-    padding: 48px 24px 24px;
-  }
-  section h2 {
-    font-size: 28px; margin-bottom: 8px;
-    display: flex; align-items: center; gap: 12px;
-  }
-  section h2 .badge {
-    font-size: 13px; padding: 3px 10px; border-radius: 20px;
-    color: #fff; font-weight: 600;
-  }
-  .subtitle { color: var(--slate); margin-bottom: 32px; font-size: 16px; }
-
-  /* ---- CARDS ---- */
-  .card {
-    background: var(--card); border-radius: 12px;
-    border: 1px solid var(--border);
-    padding: 24px; margin-bottom: 20px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
-  }
-
-  /* ---- KEYWORD TOOLTIP ---- */
-  .kw {
-    display: inline-block; position: relative;
-    background: #dbeafe; color: #1e40af;
-    padding: 1px 7px; border-radius: 4px;
-    font-weight: 600; cursor: help;
-    border-bottom: 2px dashed #93c5fd;
-  }
-  .kw:hover { background: #bfdbfe; }
-  .kw .tip {
-    display: none; position: absolute; bottom: calc(100% + 8px); left: 50%;
-    transform: translateX(-50%); width: 280px;
-    background: var(--dark); color: #f8fafc; font-size: 13px;
-    padding: 12px 14px; border-radius: 8px;
-    font-weight: 400; line-height: 1.5;
-    box-shadow: 0 8px 24px rgba(0,0,0,.3); z-index: 50;
-    pointer-events: none;
-  }
-  .kw .tip::after {
-    content: ''; position: absolute; top: 100%; left: 50%;
-    transform: translateX(-50%);
-    border: 6px solid transparent; border-top-color: var(--dark);
-  }
-  .kw:hover .tip { display: block; }
-
-  /* ---- COLOR DOT ---- */
-  .dot {
-    display: inline-block; width: 14px; height: 14px;
-    border-radius: 50%; margin-right: 6px; vertical-align: middle;
-    flex-shrink: 0;
-  }
-
-  /* ---- ARCHITECTURE DIAGRAM ---- */
-  .arch {
-    display: flex; flex-direction: column; align-items: center; gap: 0;
-    padding: 20px 0;
-  }
-  .arch-row {
-    display: flex; justify-content: center; gap: 20px;
-    flex-wrap: wrap;
-  }
-  .arch-box {
-    padding: 18px 28px; border-radius: 12px;
-    color: #fff; font-weight: 700; font-size: 16px;
-    text-align: center; min-width: 170px;
-    cursor: pointer;
-    position: relative;
-  }
-  .arch-box small { display: block; font-weight: 400; font-size: 12px; opacity: .85; margin-top: 4px; }
-  .arch-arrow {
-    font-size: 28px; color: var(--slate); line-height: 1;
-    padding: 6px 0; user-select: none;
-  }
-  .arch-detail {
-    display: none; background: var(--card); color: var(--dark);
-    border: 2px solid; border-radius: 10px;
-    padding: 16px 20px; margin-top: 8px; max-width: 420px;
-    font-weight: 400; font-size: 14px; text-align: left;
-  }
-  .arch-box.open .arch-detail { display: block; }
-
-  /* ---- FLOW / TIMELINE ---- */
-  .flow {
-    position: relative; padding-left: 40px;
-  }
-  .flow::before {
-    content: ''; position: absolute; left: 15px; top: 0; bottom: 0;
-    width: 3px; background: var(--border);
-  }
-  .flow-step {
-    position: relative; margin-bottom: 24px;
-  }
-  .flow-dot {
-    position: absolute; left: -33px; top: 4px;
-    width: 20px; height: 20px; border-radius: 50%;
-    border: 3px solid #fff; box-shadow: 0 0 0 2px currentColor;
-    z-index: 2;
-  }
-  .flow-step h4 { font-size: 15px; margin-bottom: 4px; }
-  .flow-step p { font-size: 14px; color: var(--slate); }
-  .flow-code {
-    background: #1e293b; color: #e2e8f0;
-    padding: 10px 14px; border-radius: 8px;
-    font-family: 'Cascadia Code', 'Fira Code', monospace;
-    font-size: 13px; margin-top: 8px;
-    overflow-x: auto; white-space: pre;
-  }
-
-  /* ---- FILE MAP ---- */
-  .file-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 16px;
-  }
-  .file-card {
-    background: var(--card); border-radius: 12px;
-    border-left: 5px solid; padding: 20px;
-  }
-  .file-card h4 { font-size: 16px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
-  .file-card p { font-size: 13px; color: var(--slate); }
-  .file-card .file-role {
-    font-size: 12px; font-weight: 600;
-    padding: 2px 10px; border-radius: 20px; color: #fff;
-    display: inline-block; margin-top: 8px;
-  }
-
-  /* ---- TOOL CARDS ---- */
-  .tool-visual {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-    gap: 16px;
-  }
-  .tool-card {
-    background: var(--card); border: 2px solid var(--teal);
-    border-radius: 12px; padding: 20px;
-    text-align: center;
-  }
-  .tool-icon { font-size: 36px; margin-bottom: 8px; }
-  .tool-card h4 { color: var(--teal); font-size: 15px; }
-  .tool-card p { font-size: 13px; color: var(--slate); margin-top: 6px; }
-
-  /* ---- SCALE LADDER ---- */
-  .ladder {
-    display: flex; flex-direction: column; gap: 0;
-    max-width: 700px; margin: 0 auto;
-  }
-  .ladder-step {
-    display: flex; align-items: stretch; gap: 0;
-  }
-  .ladder-bar {
-    width: 60px; display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    position: relative;
-  }
-  .ladder-bar::before {
-    content: ''; position: absolute; top: 0; bottom: 0;
-    width: 4px; background: var(--border);
-  }
-  .ladder-num {
-    width: 36px; height: 36px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 15px; color: #fff;
-    z-index: 2;
-  }
-  .ladder-content {
-    flex: 1; padding: 16px 20px;
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 10px; margin: 8px 0;
-  }
-  .ladder-content h4 { font-size: 15px; margin-bottom: 4px; }
-  .ladder-content p { font-size: 13px; color: var(--slate); }
-  .ladder-content .effort {
-    font-size: 11px; padding: 2px 8px; border-radius: 10px;
-    color: #fff; font-weight: 600; display: inline-block; margin-top: 6px;
-  }
-
-  /* ---- INTERACTIVE SIMULATOR ---- */
-  .sim-wrap {
-    background: var(--card); border-radius: 14px;
-    border: 2px solid var(--border); overflow: hidden;
-  }
-  .sim-header {
-    background: var(--dark); color: #fff; padding: 14px 20px;
-    font-weight: 600; font-size: 15px;
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .sim-body { padding: 20px; min-height: 300px; }
-  .sim-controls {
-    display: flex; gap: 10px; padding: 16px 20px;
-    border-top: 1px solid var(--border);
-    flex-wrap: wrap;
-  }
-  .sim-btn {
-    padding: 8px 18px; border-radius: 8px; border: none;
-    font-weight: 600; font-size: 13px; cursor: pointer;
-  }
-  .sim-btn-primary { background: var(--blue); color: #fff; }
-  .sim-btn-primary:hover { background: #2563eb; }
-  .sim-btn-reset { background: var(--border); color: var(--dark); }
-  .sim-msg {
-    padding: 12px 16px; border-radius: 10px;
-    margin-bottom: 12px; font-size: 14px;
-    max-width: 85%;
-  }
-  .sim-msg.user { background: #dbeafe; margin-left: auto; text-align: right; }
-  .sim-msg.tool { background: #d1fae5; border-left: 4px solid var(--green); }
-  .sim-msg.think { background: #fef3c7; border-left: 4px solid var(--yellow); font-style: italic; }
-  .sim-msg.ai { background: #f1f5f9; border-left: 4px solid var(--purple); }
-  .sim-msg .sim-label {
-    font-size: 11px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .5px; margin-bottom: 4px;
-  }
-
-  /* ---- LEGEND ---- */
-  .legend {
-    display: flex; flex-wrap: wrap; gap: 12px;
-    padding: 16px; background: #f8fafc; border-radius: 10px;
-    margin-bottom: 24px; border: 1px solid var(--border);
-  }
-  .legend-item {
-    display: flex; align-items: center; gap: 6px; font-size: 13px;
-  }
-
-  /* ---- BRIDGE CARDS ---- */
-  .bridge-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-  }
-  .bridge-card {
-    background: var(--card); border-radius: 12px;
-    border: 1px solid var(--border); padding: 20px;
-  }
-  .bridge-card h4 { font-size: 15px; margin-bottom: 6px; color: var(--blue); }
-  .bridge-familiar { font-size: 13px; color: var(--green); font-weight: 600; margin-bottom: 4px; }
-  .bridge-new { font-size: 13px; color: var(--slate); }
-
-  /* ---- RESPONSIVE ---- */
-  @media (max-width: 700px) {
-    .arch-row { flex-direction: column; align-items: center; }
-    .file-grid, .tool-visual, .bridge-grid { grid-template-columns: 1fr; }
-    nav { padding: 8px 12px; }
-    nav a { font-size: 12px; padding: 4px 8px; }
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QueryMaster — Visual Guide</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- ====== NAVIGATION ====== -->
-<nav id="topnav">
-  <a href="#overview">Overview</a>
-  <a href="#architecture">Architecture</a>
-  <a href="#files">Files</a>
-  <a href="#tools">Tools</a>
-  <a href="#flow">How It Flows</a>
-  <a href="#simulator">Try It</a>
-  <a href="#keywords">Keywords</a>
-  <a href="#scaling">Scaling</a>
-</nav>
 
-<!-- ================================================ -->
-<!-- SECTION 1: OVERVIEW                              -->
-<!-- ================================================ -->
-<section id="overview">
-  <h2>What Is QueryMaster? <span class="badge" style="background:var(--blue)">Start Here</span></h2>
-  <p class="subtitle">A local AI that talks to your database in plain English. No cloud. No API keys. Runs on your GPU.</p>
+<!-- =====================================================
+     HEADER — Logo + Navigation
+     ===================================================== -->
 
-  <div class="card" style="text-align:center; font-size: 18px; padding: 30px;">
-    <div style="display:flex; align-items:center; justify-content:center; gap:20px; flex-wrap:wrap;">
-      <div style="padding:16px 24px; background:#dbeafe; border-radius:12px;">
-        <strong>You type:</strong><br>"Who is my best customer?"
-      </div>
-      <span style="font-size:32px;">&#10132;</span>
-      <div style="padding:16px 24px; background:#fef3c7; border-radius:12px;">
-        <strong>AI thinks & queries</strong><br><span style="font-size:14px;color:var(--slate)">plans steps, writes SQL, runs it</span>
-      </div>
-      <span style="font-size:32px;">&#10132;</span>
-      <div style="padding:16px 24px; background:#d1fae5; border-radius:12px;">
-        <strong>You get:</strong><br>"Nicole Bond, 12 orders, $1,847"
-      </div>
-    </div>
+<header class="header">
+  <div class="container">
+
+    <!-- Logo -->
+    <a href="#overview" class="header-logo">
+      <!-- CodingStars logo — replace this SVG with an <img src="logo.png"> when you have the file -->
+      <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="8" fill="#D97706"/>
+        <text x="16" y="21" text-anchor="middle" font-family="Inter, sans-serif" font-weight="700" font-size="16" fill="#FFF">★</text>
+      </svg>
+      <span class="header-logo-text">
+        Coding<span class="highlight">Stars</span>
+      </span>
+    </a>
+
+    <!-- Navigation -->
+    <nav class="header-nav" id="topnav">
+      <a href="#overview">Overview</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#files">Files</a>
+      <a href="#tools">Tools</a>
+      <a href="#flow">Flow</a>
+      <a href="#simulator">Try It</a>
+      <a href="#keywords">Keywords</a>
+      <a href="#scaling">Scaling</a>
+    </nav>
+
   </div>
+</header>
 
-  <div class="legend">
-    <strong style="margin-right:8px;">Color Legend (used throughout):</strong>
-    <span class="legend-item"><span class="dot" style="background:var(--blue)"></span> You / Browser</span>
-    <span class="legend-item"><span class="dot" style="background:var(--orange)"></span> Streamlit (Web UI)</span>
-    <span class="legend-item"><span class="dot" style="background:var(--purple)"></span> Agent (Brain)</span>
-    <span class="legend-item"><span class="dot" style="background:var(--green)"></span> Tools (Hands)</span>
-    <span class="legend-item"><span class="dot" style="background:var(--red)"></span> Ollama / AI Model</span>
-    <span class="legend-item"><span class="dot" style="background:var(--teal)"></span> Database</span>
-    <span class="legend-item"><span class="dot" style="background:var(--yellow)"></span> AI Thinking</span>
-  </div>
-</section>
 
-<!-- ================================================ -->
-<!-- SECTION 2: ARCHITECTURE                          -->
-<!-- ================================================ -->
-<section id="architecture">
-  <h2>Architecture <span class="badge" style="background:var(--purple)">How It's Built</span></h2>
-  <p class="subtitle">Click any block to see what it does. Everything runs on your machine.</p>
+<!-- =====================================================
+     SECTION: Overview
+     ===================================================== -->
 
-  <div class="arch">
-    <div class="arch-row">
-      <div class="arch-box" style="background:var(--blue);" onclick="this.classList.toggle('open')">
-        &#128100; You (Browser)
-        <small>Type questions in plain English</small>
-        <div class="arch-detail" style="border-color:var(--blue);">
-          You open <code>http://localhost:8501</code> in any browser. That's your chat window. You type a question like you'd ask a colleague. No SQL knowledge needed.
+<section class="section" id="overview">
+  <div class="container">
+    <h2 class="section-title">What Is QueryMaster?</h2>
+    <p class="section-subtitle">A local AI that talks to your database in plain English. No cloud. No API keys. Runs on your GPU.</p>
+
+    <!-- The "how it works" summary card -->
+    <div class="card text-center">
+      <div style="display:flex; align-items:center; justify-content:center; gap:var(--space-lg); flex-wrap:wrap;">
+        <div style="padding:var(--space-md) var(--space-lg); background:#EFF6FF; border-radius:var(--radius-md);">
+          <strong>You type:</strong><br>"Who is my best customer?"
+        </div>
+        <span style="font-size:28px; color:var(--color-text-muted);">➜</span>
+        <div style="padding:var(--space-md) var(--space-lg); background:var(--color-accent-soft); border-radius:var(--radius-md);">
+          <strong>AI thinks &amp; queries</strong><br><span class="text-sm text-muted">plans steps, writes SQL, runs it</span>
+        </div>
+        <span style="font-size:28px; color:var(--color-text-muted);">➜</span>
+        <div style="padding:var(--space-md) var(--space-lg); background:#ECFDF5; border-radius:var(--radius-md);">
+          <strong>You get:</strong><br>"Nicole Bond, 12 orders, $1,847"
         </div>
       </div>
     </div>
-    <div class="arch-arrow">&#9660;</div>
-    <div class="arch-row">
-      <div class="arch-box" style="background:var(--orange);" onclick="this.classList.toggle('open')">
-        &#128196; Streamlit
-        <small>app.py - The chat interface</small>
-        <div class="arch-detail" style="border-color:var(--orange);">
-          <strong>Streamlit</strong> is a Python library that creates web pages from Python code. It draws the chat bubbles, sidebar, and input box. Think of it as the "screen" of the application. <em>File: app.py</em>
-        </div>
-      </div>
-    </div>
-    <div class="arch-arrow">&#9660;</div>
-    <div class="arch-row">
-      <div class="arch-box" style="background:var(--purple);" onclick="this.classList.toggle('open')">
-        &#129504; Agent + LangChain
-        <small>agent.py - The brain that plans</small>
-        <div class="arch-detail" style="border-color:var(--purple);">
-          The <strong>agent</strong> is a loop. It sends your question to the AI, checks if the AI wants to use a tool, runs that tool, sends the result back, and repeats until the AI has a final answer. <strong>LangChain</strong> is the framework that makes connecting AI to tools easy. <em>File: agent.py</em>
-        </div>
-      </div>
-    </div>
-    <div class="arch-arrow" style="display:flex; gap: 80px; justify-content:center;">
-      <span>&#9660;</span>
-      <span>&#9660;</span>
-    </div>
-    <div class="arch-row">
-      <div class="arch-box" style="background:var(--red);" onclick="this.classList.toggle('open')">
-        &#129302; Ollama + Qwen
-        <small>Local AI on your GPU</small>
-        <div class="arch-detail" style="border-color:var(--red);">
-          <strong>Ollama</strong> is the program that runs AI models on your computer. <strong>Qwen 2.5 Coder 14B</strong> is the specific AI model - it has 14 billion learned parameters and lives in your GPU's 16 GB VRAM. It reads text and generates responses, including deciding which tools to call. <em>Configured in: config.py</em>
-        </div>
-      </div>
-      <div class="arch-box" style="background:var(--green);" onclick="this.classList.toggle('open')">
-        &#128295; Tools
-        <small>tools.py - 4 database functions</small>
-        <div class="arch-detail" style="border-color:var(--green);">
-          Tools are Python functions the AI can call. They are the AI's "hands." Without them it can only talk. With them, it can actually query the database. We have 4: <strong>list_tables</strong>, <strong>describe_table</strong>, <strong>sample_table</strong>, <strong>execute_sql</strong>. <em>File: tools.py</em>
-        </div>
-      </div>
-    </div>
-    <div class="arch-arrow">&#9660;</div>
-    <div class="arch-row">
-      <div class="arch-box" style="background:var(--teal);" onclick="this.classList.toggle('open')">
-        &#128451; SQLite Database
-        <small>data/ecommerce.db - 108 KB</small>
-        <div class="arch-detail" style="border-color:var(--teal);">
-          A <strong>SQLite</strong> database is just a file on your disk - no server needed. Ours contains 4 tables: <strong>products</strong> (97 rows), <strong>customers</strong> (100), <strong>orders</strong> (500), <strong>order_items</strong> (~1400). It simulates an e-commerce store. <em>Generated by: setup_db.py</em>
-        </div>
-      </div>
+
+    <!-- Color legend used throughout the page -->
+    <div class="legend mt-md">
+      <strong style="margin-right:var(--space-sm);">Color Legend:</strong>
+      <span class="legend-item"><span class="dot" style="background:var(--color-blue);"></span> You / Browser</span>
+      <span class="legend-item"><span class="dot" style="background:var(--color-orange);"></span> Streamlit (Web UI)</span>
+      <span class="legend-item"><span class="dot" style="background:var(--color-purple);"></span> Agent (Brain)</span>
+      <span class="legend-item"><span class="dot" style="background:var(--color-green);"></span> Tools (Hands)</span>
+      <span class="legend-item"><span class="dot" style="background:var(--color-red);"></span> Ollama / AI Model</span>
+      <span class="legend-item"><span class="dot" style="background:var(--color-teal);"></span> Database</span>
+      <span class="legend-item"><span class="dot" style="background:var(--color-yellow);"></span> AI Thinking</span>
     </div>
   </div>
 </section>
 
-<!-- ================================================ -->
-<!-- SECTION 3: FILES                                 -->
-<!-- ================================================ -->
-<section id="files">
-  <h2>Project Files <span class="badge" style="background:var(--green)">What's In Each File</span></h2>
-  <p class="subtitle">Every file has one job. Click to see its role.</p>
 
-  <div class="file-grid">
-    <div class="file-card" style="border-color:var(--orange);">
-      <h4><span class="dot" style="background:var(--orange)"></span> app.py</h4>
-      <p>The chat interface. Draws the web page, captures your questions, shows AI answers. Also shows database info in the sidebar.</p>
-      <span class="file-role" style="background:var(--orange);">THE SCREEN</span>
-    </div>
-    <div class="file-card" style="border-color:var(--purple);">
-      <h4><span class="dot" style="background:var(--purple)"></span> agent.py</h4>
-      <p>The brain. Contains the system prompt (AI's personality) and the main loop that sends questions to the AI, runs tools, and collects the final answer.</p>
-      <span class="file-role" style="background:var(--purple);">THE BRAIN</span>
-    </div>
-    <div class="file-card" style="border-color:var(--green);">
-      <h4><span class="dot" style="background:var(--green)"></span> tools.py</h4>
-      <p>The 4 database functions the AI can call: list tables, describe a table, sample rows, and run any SQL query.</p>
-      <span class="file-role" style="background:var(--green);">THE HANDS</span>
-    </div>
-    <div class="file-card" style="border-color:var(--red);">
-      <h4><span class="dot" style="background:var(--red)"></span> config.py</h4>
-      <p>Settings: which AI model to use, its temperature (creativity level), context window size, and how to connect to Ollama.</p>
-      <span class="file-role" style="background:var(--red);">THE SETTINGS</span>
-    </div>
-    <div class="file-card" style="border-color:var(--teal);">
-      <h4><span class="dot" style="background:var(--teal)"></span> setup_db.py</h4>
-      <p>Run once to create the database. Generates 97 products, 100 customers, 500 orders with realistic fake data.</p>
-      <span class="file-role" style="background:var(--teal);">THE BUILDER</span>
-    </div>
-    <div class="file-card" style="border-color:var(--slate);">
-      <h4><span class="dot" style="background:var(--slate)"></span> logging_utils.py</h4>
-      <p>Pretty-prints the AI's thinking process in the terminal. Uses colored boxes so you can see each reasoning step.</p>
-      <span class="file-role" style="background:var(--slate);">THE DEBUGGER</span>
+<!-- =====================================================
+     SECTION: Architecture
+     ===================================================== -->
+
+<section class="section" id="architecture">
+  <div class="container">
+    <h2 class="section-title">Architecture</h2>
+    <p class="section-subtitle">Click any block to see what it does. Everything runs on your machine.</p>
+
+    <div class="arch">
+
+      <div class="arch-row">
+        <div class="arch-box" style="background:var(--color-blue);" onclick="this.classList.toggle('open')">
+          👤 You (Browser)
+          <small>Type questions in plain English</small>
+          <div class="arch-detail" style="border-color:var(--color-blue);">
+            You open <code>http://localhost:8501</code> in any browser. That's your chat window. Type a question like you'd ask a colleague — no SQL needed.
+          </div>
+        </div>
+      </div>
+
+      <div class="arch-arrow">▼</div>
+
+      <div class="arch-row">
+        <div class="arch-box" style="background:var(--color-orange);" onclick="this.classList.toggle('open')">
+          📄 Streamlit
+          <small>app.py — The chat interface</small>
+          <div class="arch-detail" style="border-color:var(--color-orange);">
+            <strong>Streamlit</strong> is a Python library that creates web pages from Python code. It draws the chat bubbles, sidebar, and input box — the "screen" of the app. <em>File: app.py</em>
+          </div>
+        </div>
+      </div>
+
+      <div class="arch-arrow">▼</div>
+
+      <div class="arch-row">
+        <div class="arch-box" style="background:var(--color-purple);" onclick="this.classList.toggle('open')">
+          🧠 Agent + LangChain
+          <small>agent.py — The brain that plans</small>
+          <div class="arch-detail" style="border-color:var(--color-purple);">
+            The <strong>agent</strong> is a loop: send your question to the AI, check if it wants to use a tool, run that tool, send the result back, repeat until done. <strong>LangChain</strong> makes connecting AI to tools easy. <em>File: agent.py</em>
+          </div>
+        </div>
+      </div>
+
+      <div class="arch-arrow" style="display:flex; gap:80px; justify-content:center;">
+        <span>▼</span>
+        <span>▼</span>
+      </div>
+
+      <div class="arch-row">
+        <div class="arch-box" style="background:var(--color-red);" onclick="this.classList.toggle('open')">
+          🤖 Ollama + Qwen
+          <small>Local AI on your GPU</small>
+          <div class="arch-detail" style="border-color:var(--color-red);">
+            <strong>Ollama</strong> runs AI models locally. <strong>Qwen 2.5 Coder 14B</strong> has 14 billion parameters and lives in your GPU's 16 GB VRAM. It reads text and generates responses, including deciding which tools to call. <em>Configured in: config.py</em>
+          </div>
+        </div>
+
+        <div class="arch-box" style="background:var(--color-green);" onclick="this.classList.toggle('open')">
+          🔧 Tools
+          <small>tools.py — 4 database functions</small>
+          <div class="arch-detail" style="border-color:var(--color-green);">
+            Tools are Python functions the AI can call — its "hands." We have 4: <strong>list_tables</strong>, <strong>describe_table</strong>, <strong>sample_table</strong>, <strong>execute_sql</strong>. <em>File: tools.py</em>
+          </div>
+        </div>
+      </div>
+
+      <div class="arch-arrow">▼</div>
+
+      <div class="arch-row">
+        <div class="arch-box" style="background:var(--color-teal);" onclick="this.classList.toggle('open')">
+          🗃 SQLite Database
+          <small>data/ecommerce.db — 108 KB</small>
+          <div class="arch-detail" style="border-color:var(--color-teal);">
+            A <strong>SQLite</strong> database is just a file on disk — no server needed. Ours has 4 tables: <strong>products</strong> (97 rows), <strong>customers</strong> (100), <strong>orders</strong> (500), <strong>order_items</strong> (~1400). <em>Generated by: setup_db.py</em>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
 
-<!-- ================================================ -->
-<!-- SECTION 4: TOOLS                                 -->
-<!-- ================================================ -->
-<section id="tools">
-  <h2>The 4 Tools <span class="badge" style="background:var(--green)">What the AI Can Do</span></h2>
-  <p class="subtitle">Without tools, the AI can only talk. With tools, it can act. These are its abilities.</p>
 
-  <div class="tool-visual">
-    <div class="tool-card">
-      <div class="tool-icon">&#128203;</div>
-      <h4>list_tables</h4>
-      <p><strong>Shows all tables</strong> in the database. The AI calls this first to understand what data exists.</p>
-      <div class="flow-code" style="font-size:12px; margin-top:10px; text-align:left;">Result: "customers, orders,
+<!-- =====================================================
+     SECTION: Project Files
+     ===================================================== -->
+
+<section class="section" id="files">
+  <div class="container">
+    <h2 class="section-title">Project Files</h2>
+    <p class="section-subtitle">Every file has one job.</p>
+
+    <div class="grid grid-auto">
+      <div class="file-card" style="border-color:var(--color-orange);">
+        <h4><span class="dot" style="background:var(--color-orange);"></span> app.py</h4>
+        <p>The chat interface. Draws the web page, captures your questions, shows AI answers.</p>
+        <span class="file-role" style="background:var(--color-orange);">The Screen</span>
+      </div>
+
+      <div class="file-card" style="border-color:var(--color-purple);">
+        <h4><span class="dot" style="background:var(--color-purple);"></span> agent.py</h4>
+        <p>The brain. Contains the system prompt and the main loop that orchestrates everything.</p>
+        <span class="file-role" style="background:var(--color-purple);">The Brain</span>
+      </div>
+
+      <div class="file-card" style="border-color:var(--color-green);">
+        <h4><span class="dot" style="background:var(--color-green);"></span> tools.py</h4>
+        <p>The 4 database functions the AI can call: list tables, describe, sample, and run SQL.</p>
+        <span class="file-role" style="background:var(--color-green);">The Hands</span>
+      </div>
+
+      <div class="file-card" style="border-color:var(--color-red);">
+        <h4><span class="dot" style="background:var(--color-red);"></span> config.py</h4>
+        <p>Settings: which AI model, temperature, context window size, and Ollama connection.</p>
+        <span class="file-role" style="background:var(--color-red);">The Settings</span>
+      </div>
+
+      <div class="file-card" style="border-color:var(--color-teal);">
+        <h4><span class="dot" style="background:var(--color-teal);"></span> setup_db.py</h4>
+        <p>Run once to create the database. Generates products, customers, and orders with fake data.</p>
+        <span class="file-role" style="background:var(--color-teal);">The Builder</span>
+      </div>
+
+      <div class="file-card" style="border-color:var(--color-text-muted);">
+        <h4><span class="dot" style="background:var(--color-text-muted);"></span> logging_utils.py</h4>
+        <p>Pretty-prints the AI's thinking in the terminal with colored boxes for each step.</p>
+        <span class="file-role" style="background:var(--color-text-muted);">The Debugger</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- =====================================================
+     SECTION: The 4 Tools
+     ===================================================== -->
+
+<section class="section" id="tools">
+  <div class="container">
+    <h2 class="section-title">The 4 Tools</h2>
+    <p class="section-subtitle">Without tools, the AI can only talk. With tools, it can act.</p>
+
+    <div class="grid grid-auto">
+      <div class="icon-card">
+        <div class="icon">📋</div>
+        <h4>list_tables</h4>
+        <p><strong>Shows all tables</strong> in the database. The AI calls this first to see what data exists.</p>
+        <div class="code-block mt-sm" style="font-size:12px; text-align:left;">Result: "customers, orders,
 order_items, products"</div>
-    </div>
-    <div class="tool-card">
-      <div class="tool-icon">&#128270;</div>
-      <h4>describe_table</h4>
-      <p><strong>Shows column names & types</strong> for a table. Lets the AI know what fields exist before writing SQL.</p>
-      <div class="flow-code" style="font-size:12px; margin-top:10px; text-align:left;">Result: "id (INTEGER)
+      </div>
+
+      <div class="icon-card">
+        <div class="icon">🔍</div>
+        <h4>describe_table</h4>
+        <p><strong>Shows column names &amp; types</strong> for a table so the AI knows what fields exist.</p>
+        <div class="code-block mt-sm" style="font-size:12px; text-align:left;">Result: "id (INTEGER)
 first_name (TEXT)
 email (TEXT)..."</div>
-    </div>
-    <div class="tool-card">
-      <div class="tool-icon">&#128209;</div>
-      <h4>sample_table</h4>
-      <p><strong>Shows a few example rows.</strong> Sometimes the AI needs to see actual data to understand formats and values.</p>
-      <div class="flow-code" style="font-size:12px; margin-top:10px; text-align:left;">Result: (1, 'James',
+      </div>
+
+      <div class="icon-card">
+        <div class="icon">📑</div>
+        <h4>sample_table</h4>
+        <p><strong>Shows a few example rows.</strong> Helps the AI understand actual data formats and values.</p>
+        <div class="code-block mt-sm" style="font-size:12px; text-align:left;">Result: (1, 'James',
 'Smith', 'james@...')</div>
-    </div>
-    <div class="tool-card">
-      <div class="tool-icon">&#9889;</div>
-      <h4>execute_sql</h4>
-      <p><strong>Runs any SQL query.</strong> The most powerful tool. The AI writes SQL based on what it learned from the other tools.</p>
-      <div class="flow-code" style="font-size:12px; margin-top:10px; text-align:left;">SELECT COUNT(*)
+      </div>
+
+      <div class="icon-card">
+        <div class="icon">⚡</div>
+        <h4>execute_sql</h4>
+        <p><strong>Runs any SQL query.</strong> The most powerful tool — the AI writes SQL from what it learned.</p>
+        <div class="code-block mt-sm" style="font-size:12px; text-align:left;">SELECT COUNT(*)
 FROM customers
 WHERE country='US';</div>
+      </div>
     </div>
-  </div>
 
-  <div class="card" style="margin-top: 24px; border-left: 4px solid var(--yellow);">
-    <h4 style="color:var(--yellow);">&#128161; Every tool has a "reasoning" parameter</h4>
-    <p style="font-size:14px; color:var(--slate); margin-top:6px;">
-      Before calling any tool, the AI must explain <em>why</em> it's calling it. This forces it to think before acting and gives you a debug trail. For example: <em>"I need to understand the orders table structure to write a proper JOIN query."</em>
-    </p>
+    <!-- Tip callout -->
+    <div class="callout mt-lg">
+      <span class="callout-icon">💡</span>
+      <div>
+        <strong>Every tool has a "reasoning" parameter.</strong>
+        Before calling any tool, the AI must explain <em>why</em> — this forces it to think before acting and gives you a debug trail.
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- ================================================ -->
-<!-- SECTION 5: FLOW                                  -->
-<!-- ================================================ -->
-<section id="flow">
-  <h2>The Flow <span class="badge" style="background:var(--orange)">Step by Step</span></h2>
-  <p class="subtitle">What happens from the moment you type a question to when you see the answer.</p>
 
-  <div class="flow" id="flowTimeline">
-    <div class="flow-step" data-delay="0">
-      <div class="flow-dot" style="background:var(--blue); color:var(--blue);"></div>
-      <h4 style="color:var(--blue);">1. You type a question</h4>
-      <p>"Who is my best customer?"</p>
-      <div class="flow-code">st.chat_input("Ask a question about your data...")</div>
-    </div>
+<!-- =====================================================
+     SECTION: The Flow
+     ===================================================== -->
 
-    <div class="flow-step" data-delay="100">
-      <div class="flow-dot" style="background:var(--orange); color:var(--orange);"></div>
-      <h4 style="color:var(--orange);">2. Streamlit sends it to the Agent</h4>
-      <p>app.py calls the <code>ask()</code> function with your question and the chat history.</p>
-      <div class="flow-code">response = ask(query=prompt, history=history, model=model)</div>
-    </div>
+<section class="section" id="flow">
+  <div class="container">
+    <h2 class="section-title">The Flow</h2>
+    <p class="section-subtitle">What happens from the moment you type a question to when you see the answer.</p>
 
-    <div class="flow-step" data-delay="200">
-      <div class="flow-dot" style="background:var(--purple); color:var(--purple);"></div>
-      <h4 style="color:var(--purple);">3. Agent sends everything to the AI</h4>
-      <p>The system prompt + tools list + chat history + your question all get sent to Ollama.</p>
-      <div class="flow-code">response = model.invoke(history)  # history includes EVERYTHING</div>
-    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-dot" style="background:var(--color-blue); color:var(--color-blue);"></div>
+        <h4 style="color:var(--color-blue);">1. You type a question</h4>
+        <p>"Who is my best customer?"</p>
+        <div class="code-block mt-sm">st.chat_input("Ask a question about your data...")</div>
+      </div>
 
-    <div class="flow-step" data-delay="300">
-      <div class="flow-dot" style="background:var(--red); color:var(--red);"></div>
-      <h4 style="color:var(--red);">4. AI model runs on GPU</h4>
-      <p>Qwen 2.5 Coder processes all the text using your RX 9060 XT's 16 GB VRAM. It decides: "I should call list_tables first."</p>
-    </div>
+      <div class="step">
+        <div class="step-dot" style="background:var(--color-orange); color:var(--color-orange);"></div>
+        <h4 style="color:var(--color-orange);">2. Streamlit sends it to the Agent</h4>
+        <p>app.py calls the <code>ask()</code> function with your question and the chat history.</p>
+        <div class="code-block mt-sm">response = ask(query=prompt, history=history, model=model)</div>
+      </div>
 
-    <div class="flow-step" data-delay="400">
-      <div class="flow-dot" style="background:var(--green); color:var(--green);"></div>
-      <h4 style="color:var(--green);">5. Tool executes</h4>
-      <p>Agent sees the AI wants <code>list_tables</code>, runs it, gets back "customers, orders, order_items, products".</p>
-      <div class="flow-code">tool_response = call_tool(tool_call)  # runs the Python function
+      <div class="step">
+        <div class="step-dot" style="background:var(--color-purple); color:var(--color-purple);"></div>
+        <h4 style="color:var(--color-purple);">3. Agent sends everything to the AI</h4>
+        <p>The system prompt + tools list + chat history + your question all get sent to Ollama.</p>
+        <div class="code-block mt-sm">response = model.invoke(history)  # history includes EVERYTHING</div>
+      </div>
+
+      <div class="step">
+        <div class="step-dot" style="background:var(--color-red); color:var(--color-red);"></div>
+        <h4 style="color:var(--color-red);">4. AI model runs on GPU</h4>
+        <p>Qwen 2.5 Coder processes all the text on your GPU. It decides: "I should call list_tables first."</p>
+      </div>
+
+      <div class="step">
+        <div class="step-dot" style="background:var(--color-green); color:var(--color-green);"></div>
+        <h4 style="color:var(--color-green);">5. Tool executes</h4>
+        <p>Agent sees the AI wants <code>list_tables</code>, runs it, gets back the table names.</p>
+        <div class="code-block mt-sm">tool_response = call_tool(tool_call)  # runs the Python function
 history.append(tool_response)        # adds result to history</div>
-    </div>
+      </div>
 
-    <div class="flow-step" data-delay="500">
-      <div class="flow-dot" style="background:var(--yellow); color:var(--yellow);"></div>
-      <h4 style="color:var(--yellow);">6. Loop repeats (AI thinks again)</h4>
-      <p>The tool result goes back to the AI. It decides to call more tools (describe_table, execute_sql) or give a final answer. Steps 3-6 repeat until done.</p>
-    </div>
+      <div class="step">
+        <div class="step-dot" style="background:var(--color-yellow); color:var(--color-yellow);"></div>
+        <h4 style="color:var(--color-yellow);">6. Loop repeats (AI thinks again)</h4>
+        <p>The tool result goes back to the AI. It calls more tools or gives a final answer. Steps 3–6 repeat until done.</p>
+      </div>
 
-    <div class="flow-step" data-delay="600">
-      <div class="flow-dot" style="background:var(--purple); color:var(--purple);"></div>
-      <h4 style="color:var(--purple);">7. Agent returns the final answer</h4>
-      <p>When the AI responds with text and no tool call, the loop stops. That text is the answer.</p>
-      <div class="flow-code">if not tool_calls:          # no more tools to call?
+      <div class="step">
+        <div class="step-dot" style="background:var(--color-purple); color:var(--color-purple);"></div>
+        <h4 style="color:var(--color-purple);">7. Agent returns the final answer</h4>
+        <p>When the AI responds with text and no tool call, the loop stops. That text is the answer.</p>
+        <div class="code-block mt-sm">if not tool_calls:          # no more tools to call?
     return response.content  # done! return the answer</div>
-    </div>
-
-    <div class="flow-step" data-delay="700">
-      <div class="flow-dot" style="background:var(--blue); color:var(--blue);"></div>
-      <h4 style="color:var(--blue);">8. You see the answer</h4>
-      <p>Streamlit renders the markdown response in a chat bubble: "Your best customer is <strong>Nicole Bond</strong> with 12 orders totaling $1,847.50"</p>
-    </div>
-  </div>
-</section>
-
-<!-- ================================================ -->
-<!-- SECTION 6: INTERACTIVE SIMULATOR                 -->
-<!-- ================================================ -->
-<section id="simulator">
-  <h2>Try It Yourself <span class="badge" style="background:var(--pink)">Interactive</span></h2>
-  <p class="subtitle">Click "Next Step" to walk through what happens when you ask a question. Watch which component acts at each step.</p>
-
-  <div class="sim-wrap">
-    <div class="sim-header">
-      <span>&#9654; Agent Simulator</span>
-      <span id="simStepLabel" style="font-size:13px; opacity:.7;">Step 0 / 8</span>
-    </div>
-    <div class="sim-body" id="simBody"></div>
-    <div class="sim-controls">
-      <button class="sim-btn sim-btn-primary" id="simNext" onclick="simAdvance()">Next Step &#10132;</button>
-      <button class="sim-btn sim-btn-reset" onclick="simReset()">Reset</button>
-      <span id="simComponent" style="font-size:13px; color:var(--slate); display:flex; align-items:center; gap:6px;"></span>
-    </div>
-  </div>
-</section>
-
-<!-- ================================================ -->
-<!-- SECTION 7: KEYWORD BRIDGES                       -->
-<!-- ================================================ -->
-<section id="keywords">
-  <h2>Keyword Bridges <span class="badge" style="background:var(--yellow); color:var(--dark);">For Your Boss</span></h2>
-  <p class="subtitle">Every new word connected to something familiar. Hover the <span class="kw" style="cursor:default;">blue words<span class="tip">These are keywords with built-in explanations!</span></span> anywhere on this page for instant definitions.</p>
-
-  <div class="bridge-grid">
-    <div class="bridge-card">
-      <h4>LLM (Large Language Model)</h4>
-      <div class="bridge-familiar">&#127919; You already know: Autocomplete on your phone</div>
-      <div class="bridge-new">An LLM is autocomplete on steroids. Instead of predicting the next word, it predicts entire paragraphs. It learned patterns from billions of pages of text. Qwen 2.5 Coder is the LLM we use.</div>
-    </div>
-    <div class="bridge-card">
-      <h4>Ollama</h4>
-      <div class="bridge-familiar">&#127919; You already know: VLC plays videos locally</div>
-      <div class="bridge-new">Ollama is like VLC but for AI models. Instead of streaming from Netflix (cloud AI), you download the model and run it on your own machine. Private, free, no internet needed.</div>
-    </div>
-    <div class="bridge-card">
-      <h4>Agent</h4>
-      <div class="bridge-familiar">&#127919; You already know: A new employee given instructions</div>
-      <div class="bridge-new">An AI agent is like a new hire who reads the manual (system prompt), has access to specific tools (database queries), and figures out the steps to answer your question on their own. You don't tell it HOW, you tell it WHAT you need.</div>
-    </div>
-    <div class="bridge-card">
-      <h4>Tool Calling</h4>
-      <div class="bridge-familiar">&#127919; You already know: Asking your assistant to look something up</div>
-      <div class="bridge-new">You say "check my calendar." Your assistant knows to open the calendar app and look. Tool calling is the same: the AI says "I need to run a database query" and the system runs it for them.</div>
-    </div>
-    <div class="bridge-card">
-      <h4>System Prompt</h4>
-      <div class="bridge-familiar">&#127919; You already know: A job description</div>
-      <div class="bridge-new">The system prompt is the AI's job description. It says "you are a SQL analyst, respond in markdown, your audience is business analysts." Change the job description, change the AI's behavior entirely.</div>
-    </div>
-    <div class="bridge-card">
-      <h4>Context Window</h4>
-      <div class="bridge-familiar">&#127919; You already know: A desk with limited space</div>
-      <div class="bridge-new">The AI can only "see" a limited amount of text at once (8,192 tokens ~ 6,000 words). Like a desk: the more papers you pile on, the older ones fall off. That's why very long conversations eventually lose early context.</div>
-    </div>
-    <div class="bridge-card">
-      <h4>Temperature</h4>
-      <div class="bridge-familiar">&#127919; You already know: "Strictly by the book" vs "get creative"</div>
-      <div class="bridge-new">Temperature 0 = always gives the same answer (best for SQL, facts). Temperature 1 = creative, varied answers (good for brainstorming). We use 0 because we want accurate queries, not poetry.</div>
-    </div>
-    <div class="bridge-card">
-      <h4>Parameters (14B)</h4>
-      <div class="bridge-familiar">&#127919; You already know: Brain cells</div>
-      <div class="bridge-new">14 billion parameters = 14 billion tiny numbers that store everything the AI learned. More parameters = smarter but needs more memory. Our model (9 GB on disk) fits in your GPU's 16 GB VRAM.</div>
-    </div>
-    <div class="bridge-card">
-      <h4>VRAM</h4>
-      <div class="bridge-familiar">&#127919; You already know: RAM, but for your graphics card</div>
-      <div class="bridge-new">Your RX 9060 XT has 16 GB VRAM. The AI model must fit in VRAM to run on the GPU. Our 14B model takes ~9 GB, leaving 7 GB headroom. Bigger model = needs more VRAM.</div>
-    </div>
-    <div class="bridge-card">
-      <h4>LangChain</h4>
-      <div class="bridge-familiar">&#127919; You already know: An adapter/converter plug for electronics</div>
-      <div class="bridge-new">LangChain is a Python framework that plugs AI models into tools, databases, and APIs using a standard interface. It's the adapter between the AI brain and the database hands.</div>
-    </div>
-    <div class="bridge-card">
-      <h4>Tokens</h4>
-      <div class="bridge-familiar">&#127919; You already know: Syllables in a word</div>
-      <div class="bridge-new">AI doesn't read letters or words - it reads "tokens." Roughly, 1 token = 3/4 of a word. "Hello world" = 2 tokens. "Unbelievable" = 3 tokens. Context window of 8192 tokens ~ 6000 words.</div>
-    </div>
-    <div class="bridge-card">
-      <h4>RAG</h4>
-      <div class="bridge-familiar">&#127919; You already know: Open-book exam vs closed-book</div>
-      <div class="bridge-new">RAG = Retrieval Augmented Generation. Instead of asking the AI from memory (closed-book), you give it relevant documents to read first (open-book). It searches your files, then answers using what it found.</div>
-    </div>
-  </div>
-</section>
-
-<!-- ================================================ -->
-<!-- SECTION 8: SCALING LADDER                        -->
-<!-- ================================================ -->
-<section id="scaling">
-  <h2>Scaling &amp; Training <span class="badge" style="background:var(--red)">Where To Go Next</span></h2>
-  <p class="subtitle">From "just tweak a sentence" to "train your own model" - ordered by effort.</p>
-
-  <div class="ladder">
-    <div class="ladder-step">
-      <div class="ladder-bar"><div class="ladder-num" style="background:var(--green);">1</div></div>
-      <div class="ladder-content">
-        <h4>Change the System Prompt</h4>
-        <p>Edit one text block in agent.py. Change the AI's personality, language, output format, or target audience. Takes 2 minutes.</p>
-        <span class="effort" style="background:var(--green);">5 minutes</span>
       </div>
-    </div>
-    <div class="ladder-step">
-      <div class="ladder-bar"><div class="ladder-num" style="background:var(--green);">2</div></div>
-      <div class="ladder-content">
-        <h4>Add Few-Shot Examples</h4>
-        <p>Put example Q&A pairs in the prompt so the AI learns your preferred style. "When asked about revenue, always break it down by month."</p>
-        <span class="effort" style="background:var(--green);">15 minutes</span>
-      </div>
-    </div>
-    <div class="ladder-step">
-      <div class="ladder-bar"><div class="ladder-num" style="background:var(--blue);">3</div></div>
-      <div class="ladder-content">
-        <h4>Swap the AI Model</h4>
-        <p>Change one line in config.py. Try bigger models for better SQL, smaller for faster responses. <code>ollama pull llama3.1:8b</code></p>
-        <span class="effort" style="background:var(--blue);">10 minutes</span>
-      </div>
-    </div>
-    <div class="ladder-step">
-      <div class="ladder-bar"><div class="ladder-num" style="background:var(--blue);">4</div></div>
-      <div class="ladder-content">
-        <h4>Connect Your Own Database</h4>
-        <p>Point DB_PATH to any SQLite file. For PostgreSQL/MySQL, swap the cursor helper in tools.py. The AI auto-discovers tables.</p>
-        <span class="effort" style="background:var(--blue);">30 minutes</span>
-      </div>
-    </div>
-    <div class="ladder-step">
-      <div class="ladder-bar"><div class="ladder-num" style="background:var(--orange);">5</div></div>
-      <div class="ladder-content">
-        <h4>Add New Tools</h4>
-        <p>Give the AI new abilities: create charts, export CSV, send emails, search the web. Each tool is one Python function.</p>
-        <span class="effort" style="background:var(--orange);">1-2 hours each</span>
-      </div>
-    </div>
-    <div class="ladder-step">
-      <div class="ladder-bar"><div class="ladder-num" style="background:var(--orange);">6</div></div>
-      <div class="ladder-content">
-        <h4>Add RAG (Document Search)</h4>
-        <p>Let the AI search your PDFs, docs, and wiki pages before answering. Uses ChromaDB (local, free) + an embedding model via Ollama.</p>
-        <span class="effort" style="background:var(--orange);">Half day</span>
-      </div>
-    </div>
-    <div class="ladder-step">
-      <div class="ladder-bar"><div class="ladder-num" style="background:var(--red);">7</div></div>
-      <div class="ladder-content">
-        <h4>Fine-Tune a Model (Actual Training)</h4>
-        <p>Use Unsloth + LoRA to train the model on your own Q&A data. Teach it your database schema, your SQL patterns, your jargon. Export to Ollama.</p>
-        <span class="effort" style="background:var(--red);">1-2 days</span>
-      </div>
-    </div>
-    <div class="ladder-step">
-      <div class="ladder-bar"><div class="ladder-num" style="background:var(--purple);">8</div></div>
-      <div class="ladder-content">
-        <h4>Multi-Agent Production System</h4>
-        <p>Multiple AI agents working together: SQL agent, chart agent, report agent. Add authentication, logging, and deploy for a team.</p>
-        <span class="effort" style="background:var(--purple);">Weeks</span>
+
+      <div class="step">
+        <div class="step-dot" style="background:var(--color-blue); color:var(--color-blue);"></div>
+        <h4 style="color:var(--color-blue);">8. You see the answer</h4>
+        <p>Streamlit renders the response in a chat bubble: "Your best customer is <strong>Nicole Bond</strong> with 12 orders totaling $1,847.50"</p>
       </div>
     </div>
   </div>
 </section>
 
-<div style="text-align:center; padding: 48px 24px; color:var(--slate); font-size:14px;">
-  QueryMaster Visual Guide - Built for presentation and learning.<br>
-  Open this file in any browser: <code>visuals/index.html</code>
-</div>
 
-<!-- ====== JAVASCRIPT ====== -->
+<!-- =====================================================
+     SECTION: Interactive Simulator
+     ===================================================== -->
+
+<section class="section" id="simulator">
+  <div class="container">
+    <h2 class="section-title">Try It Yourself</h2>
+    <p class="section-subtitle">Click "Next Step" to walk through what happens when you ask a question.</p>
+
+    <div class="sim-wrap">
+      <div class="sim-header">
+        <span>▶ Agent Simulator</span>
+        <span id="simStepLabel" style="font-size:13px; opacity:0.7;">Step 0 / 8</span>
+      </div>
+
+      <div class="chat-area" id="simBody"></div>
+
+      <div class="sim-controls">
+        <button class="btn btn-primary" id="simNext" onclick="simAdvance()">Next Step →</button>
+        <button class="btn btn-secondary" onclick="simReset()">Reset</button>
+        <span id="simComponent" class="text-sm text-muted" style="display:flex; align-items:center; gap:var(--space-xs);"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- =====================================================
+     SECTION: Keyword Bridges
+     ===================================================== -->
+
+<section class="section" id="keywords">
+  <div class="container">
+    <h2 class="section-title">Keyword Bridges</h2>
+    <p class="section-subtitle">
+      Every new word connected to something familiar. Hover the
+      <span class="kw" style="cursor:default;">blue words<span class="tip">These are keywords with built-in explanations!</span></span>
+      anywhere on this page for instant definitions.
+    </p>
+
+    <div class="grid grid-auto">
+      <div class="bridge-card">
+        <h4>LLM (Large Language Model)</h4>
+        <div class="bridge-familiar">🎯 You already know: Autocomplete on your phone</div>
+        <div class="bridge-new">An LLM is autocomplete on steroids — it predicts entire paragraphs from patterns learned across billions of pages. Qwen 2.5 Coder is the LLM we use.</div>
+      </div>
+
+      <div class="bridge-card">
+        <h4>Ollama</h4>
+        <div class="bridge-familiar">🎯 You already know: VLC plays videos locally</div>
+        <div class="bridge-new">Ollama is like VLC but for AI models. Instead of streaming from the cloud, you download the model and run it on your own machine. Private, free, offline.</div>
+      </div>
+
+      <div class="bridge-card">
+        <h4>Agent</h4>
+        <div class="bridge-familiar">🎯 You already know: A new employee given instructions</div>
+        <div class="bridge-new">An AI agent reads its manual (system prompt), has access to specific tools, and figures out the steps on its own. You tell it WHAT you need, not HOW.</div>
+      </div>
+
+      <div class="bridge-card">
+        <h4>Tool Calling</h4>
+        <div class="bridge-familiar">🎯 You already know: Asking your assistant to look something up</div>
+        <div class="bridge-new">"Check my calendar" → assistant opens the calendar app. Tool calling is the same: the AI says "I need to run a query" and the system runs it.</div>
+      </div>
+
+      <div class="bridge-card">
+        <h4>System Prompt</h4>
+        <div class="bridge-familiar">🎯 You already know: A job description</div>
+        <div class="bridge-new">The system prompt is the AI's job description: "you are a SQL analyst, respond in markdown." Change it, change the AI's entire behavior.</div>
+      </div>
+
+      <div class="bridge-card">
+        <h4>Context Window</h4>
+        <div class="bridge-familiar">🎯 You already know: A desk with limited space</div>
+        <div class="bridge-new">The AI can only "see" a limited amount of text at once (~8,192 tokens ≈ 6,000 words). Like a desk — pile too many papers and the oldest fall off.</div>
+      </div>
+
+      <div class="bridge-card">
+        <h4>Temperature</h4>
+        <div class="bridge-familiar">🎯 You already know: "Strictly by the book" vs "get creative"</div>
+        <div class="bridge-new">Temperature 0 = consistent, factual answers (best for SQL). Temperature 1 = creative, varied (good for brainstorming). We use 0.</div>
+      </div>
+
+      <div class="bridge-card">
+        <h4>Parameters (14B)</h4>
+        <div class="bridge-familiar">🎯 You already know: Brain cells</div>
+        <div class="bridge-new">14 billion parameters = 14 billion tiny numbers storing everything the AI learned. More = smarter but needs more memory. Ours fits in 16 GB VRAM.</div>
+      </div>
+
+      <div class="bridge-card">
+        <h4>VRAM</h4>
+        <div class="bridge-familiar">🎯 You already know: RAM, but for your graphics card</div>
+        <div class="bridge-new">Your GPU has 16 GB VRAM. The AI model must fit in VRAM to run on the GPU. Our 14B model takes ~9 GB, leaving 7 GB headroom.</div>
+      </div>
+
+      <div class="bridge-card">
+        <h4>LangChain</h4>
+        <div class="bridge-familiar">🎯 You already know: An adapter plug for electronics</div>
+        <div class="bridge-new">LangChain plugs AI models into tools, databases, and APIs using a standard interface. It's the adapter between the AI brain and the database hands.</div>
+      </div>
+
+      <div class="bridge-card">
+        <h4>Tokens</h4>
+        <div class="bridge-familiar">🎯 You already know: Syllables in a word</div>
+        <div class="bridge-new">AI reads "tokens," not words. Roughly 1 token ≈ ¾ of a word. "Hello world" = 2 tokens. 8,192 tokens ≈ 6,000 words.</div>
+      </div>
+
+      <div class="bridge-card">
+        <h4>RAG</h4>
+        <div class="bridge-familiar">🎯 You already know: Open-book exam vs closed-book</div>
+        <div class="bridge-new">RAG = Retrieval Augmented Generation. Instead of answering from memory (closed-book), you give the AI relevant documents to read first (open-book).</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- =====================================================
+     SECTION: Scaling Ladder
+     ===================================================== -->
+
+<section class="section" id="scaling">
+  <div class="container">
+    <h2 class="section-title">Scaling &amp; Training</h2>
+    <p class="section-subtitle">From "tweak a sentence" to "train your own model" — ordered by effort.</p>
+
+    <div class="ladder">
+
+      <div class="ladder-step">
+        <div class="ladder-bar"><div class="ladder-num" style="background:var(--color-green);">1</div></div>
+        <div class="ladder-content">
+          <h4>Change the System Prompt</h4>
+          <p>Edit one text block in agent.py. Change the AI's personality, output format, or target audience.</p>
+          <span class="effort-tag" style="background:var(--color-green);">5 minutes</span>
+        </div>
+      </div>
+
+      <div class="ladder-step">
+        <div class="ladder-bar"><div class="ladder-num" style="background:var(--color-green);">2</div></div>
+        <div class="ladder-content">
+          <h4>Add Few-Shot Examples</h4>
+          <p>Put example Q&amp;A pairs in the prompt so the AI learns your preferred style.</p>
+          <span class="effort-tag" style="background:var(--color-green);">15 minutes</span>
+        </div>
+      </div>
+
+      <div class="ladder-step">
+        <div class="ladder-bar"><div class="ladder-num" style="background:var(--color-blue);">3</div></div>
+        <div class="ladder-content">
+          <h4>Swap the AI Model</h4>
+          <p>Change one line in config.py. Try bigger models for better SQL, smaller for faster responses.</p>
+          <span class="effort-tag" style="background:var(--color-blue);">10 minutes</span>
+        </div>
+      </div>
+
+      <div class="ladder-step">
+        <div class="ladder-bar"><div class="ladder-num" style="background:var(--color-blue);">4</div></div>
+        <div class="ladder-content">
+          <h4>Connect Your Own Database</h4>
+          <p>Point DB_PATH to any SQLite file. For PostgreSQL/MySQL, swap the cursor helper in tools.py.</p>
+          <span class="effort-tag" style="background:var(--color-blue);">30 minutes</span>
+        </div>
+      </div>
+
+      <div class="ladder-step">
+        <div class="ladder-bar"><div class="ladder-num" style="background:var(--color-orange);">5</div></div>
+        <div class="ladder-content">
+          <h4>Add New Tools</h4>
+          <p>Give the AI new abilities: create charts, export CSV, send emails. Each tool is one Python function.</p>
+          <span class="effort-tag" style="background:var(--color-orange);">1–2 hours each</span>
+        </div>
+      </div>
+
+      <div class="ladder-step">
+        <div class="ladder-bar"><div class="ladder-num" style="background:var(--color-orange);">6</div></div>
+        <div class="ladder-content">
+          <h4>Add RAG (Document Search)</h4>
+          <p>Let the AI search your PDFs and docs before answering. Uses ChromaDB + an embedding model via Ollama.</p>
+          <span class="effort-tag" style="background:var(--color-orange);">Half day</span>
+        </div>
+      </div>
+
+      <div class="ladder-step">
+        <div class="ladder-bar"><div class="ladder-num" style="background:var(--color-red);">7</div></div>
+        <div class="ladder-content">
+          <h4>Fine-Tune a Model</h4>
+          <p>Use Unsloth + LoRA to train the model on your own Q&amp;A data. Teach it your schema and patterns.</p>
+          <span class="effort-tag" style="background:var(--color-red);">1–2 days</span>
+        </div>
+      </div>
+
+      <div class="ladder-step">
+        <div class="ladder-bar"><div class="ladder-num" style="background:var(--color-purple);">8</div></div>
+        <div class="ladder-content">
+          <h4>Multi-Agent Production System</h4>
+          <p>Multiple AI agents working together: SQL agent, chart agent, report agent. Add auth, logging, deploy.</p>
+          <span class="effort-tag" style="background:var(--color-purple);">Weeks</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- =====================================================
+     FOOTER
+     ===================================================== -->
+
+<footer class="footer">
+  <div class="container">
+    QueryMaster Visual Guide — Built by CodingStars<br>
+    Open this file in any browser: <code>visuals/index.html</code>
+  </div>
+</footer>
+
+
+<!-- =====================================================
+     JAVASCRIPT
+     Kept minimal and readable. Easy to extend.
+     ===================================================== -->
+
 <script>
-// ---- Active nav highlight ----
-const sections = document.querySelectorAll('section');
-const navLinks = document.querySelectorAll('nav a');
-window.addEventListener('scroll', () => {
-  let current = '';
-  sections.forEach(s => {
-    if (window.scrollY >= s.offsetTop - 100) current = s.id;
+
+  /* ----- Active nav highlight on scroll ----- */
+
+  const sections = document.querySelectorAll('section');
+  const navLinks = document.querySelectorAll('.header-nav a');
+
+  window.addEventListener('scroll', function () {
+    let current = '';
+
+    sections.forEach(function (section) {
+      if (window.scrollY >= section.offsetTop - 100) {
+        current = section.id;
+      }
+    });
+
+    navLinks.forEach(function (link) {
+      var isActive = link.getAttribute('href') === '#' + current;
+      link.classList.toggle('active', isActive);
+    });
   });
-  navLinks.forEach(a => {
-    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
-  });
-});
 
-// ---- SIMULATOR ----
-const simSteps = [
-  {
-    type: 'user', label: 'YOU', color: 'var(--blue)',
-    text: '"How many customers are from the US?"',
-    comp: '<span class="dot" style="background:var(--blue)"></span> <strong>You</strong> type a question in the browser'
-  },
-  {
-    type: 'think', label: 'AGENT THINKS', color: 'var(--purple)',
-    text: 'I need to find the relevant table first. Let me list all tables in the database.',
-    comp: '<span class="dot" style="background:var(--purple)"></span> <strong>agent.py</strong> sends your question + history to the AI model'
-  },
-  {
-    type: 'tool', label: 'TOOL: list_tables', color: 'var(--green)',
-    text: 'Result: "customers, order_items, orders, products"',
-    comp: '<span class="dot" style="background:var(--green)"></span> <strong>tools.py</strong> runs list_tables() on the database'
-  },
-  {
-    type: 'think', label: 'AGENT THINKS', color: 'var(--purple)',
-    text: 'Good, there\'s a "customers" table. Let me check its structure to find the country column.',
-    comp: '<span class="dot" style="background:var(--red)"></span> <strong>Ollama</strong> processes the tool result on your GPU and decides next step'
-  },
-  {
-    type: 'tool', label: 'TOOL: describe_table("customers")', color: 'var(--green)',
-    text: 'Result: "id (INTEGER), first_name (TEXT), last_name (TEXT), ... country (TEXT) DEFAULT \'US\'"',
-    comp: '<span class="dot" style="background:var(--green)"></span> <strong>tools.py</strong> runs describe_table() - now the AI knows the column names'
-  },
-  {
-    type: 'think', label: 'AGENT THINKS', color: 'var(--purple)',
-    text: 'I can see there\'s a "country" column. Let me write a SQL query to count US customers.',
-    comp: '<span class="dot" style="background:var(--red)"></span> <strong>Ollama</strong> decides it has enough info to write the SQL query'
-  },
-  {
-    type: 'tool', label: 'TOOL: execute_sql', color: 'var(--green)',
-    text: 'Query: SELECT COUNT(*) FROM customers WHERE country=\'US\'\nResult: 82',
-    comp: '<span class="dot" style="background:var(--teal)"></span> <strong>ecommerce.db</strong> executes the SQL and returns the count'
-  },
-  {
-    type: 'ai', label: 'FINAL ANSWER', color: 'var(--purple)',
-    text: 'There are <strong>82 customers</strong> from the United States in the database, out of 100 total customers.',
-    comp: '<span class="dot" style="background:var(--blue)"></span> <strong>You</strong> see the clean answer in your browser - no SQL visible'
-  },
-];
 
-let simStep = 0;
+  /* ----- Agent Simulator ----- */
 
-function simAdvance() {
-  if (simStep >= simSteps.length) return;
-  const s = simSteps[simStep];
-  const body = document.getElementById('simBody');
-  const div = document.createElement('div');
-  div.className = 'sim-msg ' + s.type;
-  div.innerHTML = '<div class="sim-label" style="color:' + s.color + '">' + s.label + '</div>' + s.text;
-  body.appendChild(div);
-  body.scrollTop = body.scrollHeight;
-  simStep++;
-  document.getElementById('simStepLabel').textContent = 'Step ' + simStep + ' / ' + simSteps.length;
-  document.getElementById('simComponent').innerHTML = s.comp;
-  if (simStep >= simSteps.length) {
-    document.getElementById('simNext').textContent = 'Done!';
-    document.getElementById('simNext').disabled = true;
-    document.getElementById('simNext').style.opacity = '.5';
+  var simSteps = [
+    {
+      type: 'user',
+      label: 'YOU',
+      color: 'var(--color-blue)',
+      text: '"How many customers are from the US?"',
+      comp: '<span class="dot" style="background:var(--color-blue)"></span> <strong>You</strong> type a question in the browser'
+    },
+    {
+      type: 'thinking',
+      label: 'AGENT THINKS',
+      color: 'var(--color-purple)',
+      text: 'I need to find the relevant table first. Let me list all tables in the database.',
+      comp: '<span class="dot" style="background:var(--color-purple)"></span> <strong>agent.py</strong> sends your question + history to the AI model'
+    },
+    {
+      type: 'tool',
+      label: 'TOOL: list_tables',
+      color: 'var(--color-green)',
+      text: 'Result: "customers, order_items, orders, products"',
+      comp: '<span class="dot" style="background:var(--color-green)"></span> <strong>tools.py</strong> runs list_tables() on the database'
+    },
+    {
+      type: 'thinking',
+      label: 'AGENT THINKS',
+      color: 'var(--color-purple)',
+      text: 'Good, there\'s a "customers" table. Let me check its structure to find the country column.',
+      comp: '<span class="dot" style="background:var(--color-red)"></span> <strong>Ollama</strong> processes the tool result on your GPU'
+    },
+    {
+      type: 'tool',
+      label: 'TOOL: describe_table("customers")',
+      color: 'var(--color-green)',
+      text: 'Result: "id (INTEGER), first_name (TEXT), last_name (TEXT), ... country (TEXT)"',
+      comp: '<span class="dot" style="background:var(--color-green)"></span> <strong>tools.py</strong> runs describe_table() — now the AI knows the columns'
+    },
+    {
+      type: 'thinking',
+      label: 'AGENT THINKS',
+      color: 'var(--color-purple)',
+      text: 'I can see there\'s a "country" column. Let me write a SQL query to count US customers.',
+      comp: '<span class="dot" style="background:var(--color-red)"></span> <strong>Ollama</strong> decides it has enough info to write the SQL'
+    },
+    {
+      type: 'tool',
+      label: 'TOOL: execute_sql',
+      color: 'var(--color-green)',
+      text: 'Query: SELECT COUNT(*) FROM customers WHERE country=\'US\'\nResult: 82',
+      comp: '<span class="dot" style="background:var(--color-teal)"></span> <strong>ecommerce.db</strong> executes the SQL and returns the count'
+    },
+    {
+      type: 'assistant',
+      label: 'FINAL ANSWER',
+      color: 'var(--color-purple)',
+      text: 'There are <strong>82 customers</strong> from the United States in the database, out of 100 total customers.',
+      comp: '<span class="dot" style="background:var(--color-blue)"></span> <strong>You</strong> see the clean answer in your browser — no SQL visible'
+    }
+  ];
+
+  var simStep = 0;
+
+  function simAdvance() {
+    if (simStep >= simSteps.length) return;
+
+    var s = simSteps[simStep];
+    var body = document.getElementById('simBody');
+
+    var div = document.createElement('div');
+    div.className = 'chat-msg ' + s.type;
+    div.innerHTML = '<div class="chat-label" style="color:' + s.color + '">' + s.label + '</div>' + s.text;
+    body.appendChild(div);
+    body.scrollTop = body.scrollHeight;
+
+    simStep++;
+    document.getElementById('simStepLabel').textContent = 'Step ' + simStep + ' / ' + simSteps.length;
+    document.getElementById('simComponent').innerHTML = s.comp;
+
+    if (simStep >= simSteps.length) {
+      var btn = document.getElementById('simNext');
+      btn.textContent = 'Done!';
+      btn.disabled = true;
+    }
   }
-}
 
-function simReset() {
-  simStep = 0;
-  document.getElementById('simBody').innerHTML = '';
-  document.getElementById('simStepLabel').textContent = 'Step 0 / ' + simSteps.length;
-  document.getElementById('simComponent').innerHTML = '';
-  document.getElementById('simNext').textContent = 'Next Step ➢';
-  document.getElementById('simNext').disabled = false;
-  document.getElementById('simNext').style.opacity = '1';
-}
+  function simReset() {
+    simStep = 0;
+    document.getElementById('simBody').innerHTML = '';
+    document.getElementById('simStepLabel').textContent = 'Step 0 / ' + simSteps.length;
+    document.getElementById('simComponent').innerHTML = '';
+
+    var btn = document.getElementById('simNext');
+    btn.textContent = 'Next Step →';
+    btn.disabled = false;
+  }
+
 </script>
+
 </body>
 </html>

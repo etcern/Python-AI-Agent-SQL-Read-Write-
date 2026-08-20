@@ -1,0 +1,855 @@
+/* --- QueryMaster — Pure HTML/CSS/JS Chat Interface ---
+   No Streamlit. Colors come from CSS custom properties switched
+   by adding a theme class to <body>.
+   Ref: https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties */
+
+
+/* --- Theme variables ---
+   Default palette: CodingStars Dark.
+   Additional themes override these variables on body.<class>.
+   JS reads the class and persists it to localStorage. */
+
+:root {
+    --bg:         #212121;
+    --sidebar-bg: #1A1A1A;
+    --fg:         #ECECEC;
+    --muted:      #888888;
+    --accent:     #D97706;
+    --border:     #333333;
+    --user-msg:   rgba(255, 255, 255, 0.04);
+    --hover:      rgba(255, 255, 255, 0.06);
+    --input-bg:   #2A2A2A;
+    --user-font:  'Roboto', sans-serif;
+}
+
+/* -- Theme: VS Code Dark -- */
+body.theme-vscode-dark {
+    --bg:         #1E1E1E;
+    --sidebar-bg: #252526;
+    --fg:         #D4D4D4;
+    --muted:      #858585;
+    --accent:     #007ACC;
+    --border:     #3E3E42;
+    --user-msg:   rgba(255, 255, 255, 0.05);
+    --hover:      rgba(255, 255, 255, 0.07);
+    --input-bg:   #2D2D30;
+}
+
+/* -- Theme: Midnight -- */
+body.theme-midnight {
+    --bg:         #0D0D0D;
+    --sidebar-bg: #050505;
+    --fg:         #E0E0E0;
+    --muted:      #666666;
+    --accent:     #A78BFA;
+    --border:     #2A2A2A;
+    --user-msg:   rgba(255, 255, 255, 0.03);
+    --hover:      rgba(255, 255, 255, 0.05);
+    --input-bg:   #1A1A1A;
+}
+
+
+/* --- Reset + base font ---
+   Ref: https://developer.mozilla.org/en-US/docs/Web/CSS/box-sizing */
+
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--user-font);
+    font-size: 15px;
+    color: var(--fg);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* -- Material Symbols baseline -- */
+.material-symbols-rounded {
+    font-family: 'Material Symbols Rounded' !important;
+    font-size: 20px;
+    vertical-align: middle;
+    user-select: none;
+}
+
+
+/* --- Layout: app shell ---
+   Sidebar (fixed width) + main (flex: 1), full viewport height.
+   Ref: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_flexible_box_layout */
+
+#app {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+}
+
+
+/* --- Sidebar ---
+   Fixed 280px column. Flex column so the action row pins to the bottom.
+   Ref: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_flexible_box_layout */
+
+#sidebar {
+    width: 280px;
+    min-width: 280px;
+    height: 100vh;
+    background: var(--sidebar-bg);
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    transition: margin-left 0.2s ease;
+    z-index: 100;
+}
+
+/* -- When sidebar is collapsed -- */
+body.sidebar-collapsed #sidebar {
+    margin-left: -280px;
+}
+
+.sidebar-top {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 12px 8px;
+}
+
+
+/* --- Logo --- */
+
+.logo-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0 12px 0;
+}
+
+.logo-icon {
+    width: 34px;
+    height: 34px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.logo-text {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--fg);
+    letter-spacing: -0.3px;
+    flex: 1;
+}
+
+.logo-text .accent {
+    color: var(--accent);
+}
+
+/* -- Close sidebar button (visible only on mobile or when sidebar is open) -- */
+#btn-sidebar-close {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+
+/* --- New Chat button --- */
+
+.btn-new-chat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--fg);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    font-family: var(--user-font);
+}
+
+.btn-new-chat:hover {
+    background: var(--hover);
+    border-color: var(--muted);
+}
+
+
+/* --- Sidebar divider --- */
+
+.sidebar-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    opacity: 0.4;
+    margin: 10px 0;
+}
+
+
+/* --- Chat list ---
+   Each chat is a button. Active chat gets a highlighted background.
+   Ref: https://developer.mozilla.org/en-US/docs/Web/CSS/text-overflow */
+
+#chat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.chat-item {
+    display: block;
+    width: 100%;
+    padding: 9px 12px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--fg);
+    font-size: 13px;
+    font-weight: 400;
+    text-align: left;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.75;
+    transition: background 0.15s, opacity 0.15s;
+    font-family: var(--user-font);
+}
+
+.chat-item:hover {
+    background: var(--hover);
+    opacity: 1;
+}
+
+.chat-item.active {
+    background: var(--hover);
+    font-weight: 500;
+    opacity: 1;
+}
+
+
+/* --- Sidebar bottom actions (rename + delete) --- */
+
+.sidebar-actions {
+    padding: 8px 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+}
+
+.sidebar-actions button {
+    flex: 1;
+    padding: 8px 0;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--fg);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: var(--user-font);
+}
+
+.sidebar-actions button:hover {
+    background: var(--hover);
+}
+
+/* -- Rename inline input -- */
+.rename-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    background: var(--input-bg);
+    color: var(--fg);
+    font-size: 13px;
+    outline: none;
+    font-family: var(--user-font);
+}
+
+.rename-row {
+    display: flex;
+    gap: 6px;
+    padding: 6px 0;
+}
+
+.rename-row button {
+    flex: 1;
+    padding: 6px 0;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: var(--user-font);
+}
+
+.rename-row .rename-save {
+    background: var(--accent);
+    color: #fff;
+}
+
+.rename-row .rename-cancel {
+    background: var(--hover);
+    color: var(--fg);
+}
+
+
+/* --- Main area --- */
+
+#main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    background: var(--bg);
+}
+
+/* -- Hamburger button: opens sidebar when collapsed -- */
+.hamburger {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 50;
+    display: none;
+}
+
+body.sidebar-collapsed .hamburger {
+    display: flex;
+}
+
+
+/* --- Welcome screen (empty chat) --- */
+
+.welcome {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.welcome h2 {
+    color: var(--fg);
+    font-size: 26px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.welcome p {
+    color: var(--muted);
+    font-size: 14px;
+    max-width: 400px;
+    line-height: 1.6;
+}
+
+.welcome.hidden {
+    display: none;
+}
+
+
+/* --- Messages container ---
+   Scrolls vertically. Each message is a flex row (avatar + content).
+   Ref: https://developer.mozilla.org/en-US/docs/Web/CSS/overflow */
+
+#messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 0 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+#messages:empty {
+    display: none;
+}
+
+.msg {
+    display: flex;
+    gap: 14px;
+    padding: 14px 24px;
+    max-width: 780px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* -- User messages get a tinted background -- */
+.msg.user {
+    background: var(--user-msg);
+    border-radius: 14px;
+}
+
+/* -- Avatar circle -- */
+.msg-avatar {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.msg.user .msg-avatar {
+    background: var(--hover);
+    color: var(--muted);
+}
+
+.msg.assistant .msg-avatar {
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+    color: var(--accent);
+}
+
+/* -- Message content -- */
+.msg-content {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.65;
+    overflow-wrap: break-word;
+}
+
+/* -- Markdown inside assistant messages -- */
+.msg-content p { margin-bottom: 0.6em; }
+.msg-content p:last-child { margin-bottom: 0; }
+.msg-content ul, .msg-content ol { margin: 0.4em 0 0.6em 1.4em; }
+.msg-content li { margin-bottom: 0.25em; }
+.msg-content h1, .msg-content h2, .msg-content h3,
+.msg-content h4, .msg-content h5, .msg-content h6 {
+    margin: 1em 0 0.4em;
+    font-weight: 600;
+}
+.msg-content h1 { font-size: 1.4em; }
+.msg-content h2 { font-size: 1.25em; }
+.msg-content h3 { font-size: 1.1em; }
+
+.msg-content a {
+    color: var(--accent);
+    text-decoration: none;
+}
+.msg-content a:hover {
+    text-decoration: underline;
+}
+
+.msg-content blockquote {
+    border-left: 3px solid var(--border);
+    padding-left: 12px;
+    color: var(--muted);
+    margin: 0.5em 0;
+}
+
+/* -- Code blocks -- */
+/* Ref: https://highlightjs.org/ */
+.msg-content pre {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin: 0.6em 0;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.msg-content pre code {
+    background: none;
+    padding: 0;
+    border: none;
+    font-size: inherit;
+}
+
+.msg-content code {
+    background: var(--input-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-family: 'JetBrains Mono', 'Consolas', monospace;
+}
+
+/* -- Tables -- */
+.msg-content table {
+    border-collapse: collapse;
+    margin: 0.6em 0;
+    width: 100%;
+    overflow-x: auto;
+    display: block;
+}
+
+.msg-content th, .msg-content td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 13px;
+}
+
+.msg-content th {
+    background: var(--user-msg);
+    font-weight: 600;
+}
+
+.msg-content hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1em 0;
+}
+
+
+/* --- Loading indicator (typing dots) --- */
+
+.typing-dots {
+    display: flex;
+    gap: 5px;
+    padding: 8px 0;
+}
+
+.typing-dots span {
+    width: 8px;
+    height: 8px;
+    background: var(--muted);
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+}
+
+.typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-6px); opacity: 1; }
+}
+
+
+/* --- Composer bar ---
+   Fixed to the bottom of #main. Rounded container with textarea
+   and action buttons in a single row.
+   Ref: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_flexible_box_layout */
+
+#composer {
+    padding: 8px 24px 20px;
+    max-width: 780px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+#composer-inner {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    border-radius: 24px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    padding: 6px 8px 6px 18px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+/* -- Subtle glow on focus (like Claude.ai) -- */
+#composer-inner:focus-within {
+    border-color: var(--muted);
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.10),
+        0 0 0 2px color-mix(in srgb, var(--muted) 15%, transparent);
+}
+
+/* -- Fade gradient above the composer -- */
+#composer::before {
+    content: "";
+    display: block;
+    height: 40px;
+    margin: -48px -24px 8px;
+    background: linear-gradient(to bottom, transparent, var(--bg));
+    pointer-events: none;
+}
+
+/* -- Textarea: grows vertically, no border -- */
+#input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--fg);
+    font-family: var(--user-font);
+    font-size: 16px;
+    line-height: 1.5;
+    resize: none;
+    padding: 8px 0;
+    min-height: 24px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#input::placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+}
+
+/* -- Buttons row: pill + settings + send -- */
+#composer-buttons {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    padding-bottom: 2px;
+}
+
+
+/* --- Icon button (generic square) --- */
+
+.icon-btn {
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.icon-btn:hover {
+    background: var(--hover);
+    color: var(--fg);
+}
+
+
+/* --- Agent pill button --- */
+
+.pill-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0 10px 0 12px;
+    border-radius: 18px;
+    background: var(--hover);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    font-family: var(--user-font);
+}
+
+.pill-btn:hover {
+    background: color-mix(in srgb, var(--fg) 12%, transparent);
+    border-color: var(--muted);
+}
+
+/* -- Robot icon inside the pill -- */
+.pill-btn .material-symbols-rounded:first-child {
+    font-size: 18px;
+    color: var(--accent);
+}
+
+/* -- Dropdown arrow -- */
+.pill-btn .arrow {
+    font-size: 18px;
+    color: var(--muted);
+    margin-left: -2px;
+}
+
+
+/* --- Send button --- */
+
+.send-btn {
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background: var(--border);
+    color: var(--muted);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.send-btn:hover {
+    background: var(--accent);
+    color: #fff;
+}
+
+
+/* --- Dropdowns (agent picker, settings) ---
+   Positioned by JS relative to their trigger button.
+   Ref: https://developer.mozilla.org/en-US/docs/Web/CSS/position */
+
+.dropdown {
+    position: fixed;
+    z-index: 9999;
+    background: var(--sidebar-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    min-width: 240px;
+    max-width: 320px;
+    max-height: 70vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.dropdown.hidden {
+    display: none;
+}
+
+.dropdown-header {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    padding: 4px 4px 6px;
+}
+
+.dropdown-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 8px 0;
+}
+
+/* -- Agent radio items -- */
+.agent-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 10px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--fg);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-align: left;
+    font-family: var(--user-font);
+}
+
+.agent-option:hover {
+    background: var(--hover);
+}
+
+.agent-option.active {
+    background: var(--hover);
+    font-weight: 500;
+}
+
+/* -- Checkmark on selected agent -- */
+.agent-option .check {
+    margin-left: auto;
+    font-size: 18px;
+    color: var(--accent);
+    visibility: hidden;
+}
+
+.agent-option.active .check {
+    visibility: visible;
+}
+
+/* -- Select boxes inside dropdowns -- */
+.dropdown select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--input-bg);
+    color: var(--fg);
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+    font-family: var(--user-font);
+    margin-bottom: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.dropdown select:focus {
+    border-color: var(--accent);
+}
+
+/* -- Showcase info -- */
+#showcase-info {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+    padding: 2px 4px;
+}
+
+#showcase-info .showcase-label {
+    color: var(--fg);
+    font-weight: 500;
+}
+
+
+/* --- Scrollbar ---
+   Ref: https://developer.mozilla.org/en-US/docs/Web/CSS/::-webkit-scrollbar */
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+
+/* --- Error message in assistant bubble --- */
+
+.msg-error {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+}
+
+
+/* --- Responsive ---
+   On screens narrower than 768px, sidebar becomes an overlay.
+   Ref: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_media_queries */
+
+@media (max-width: 768px) {
+    #sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.4);
+    }
+
+    body.sidebar-collapsed #sidebar {
+        margin-left: -280px;
+    }
+
+    /* -- Always show hamburger on mobile -- */
+    .hamburger {
+        display: flex !important;
+    }
+
+    .msg {
+        padding: 12px 16px;
+    }
+
+    #composer {
+        padding: 8px 12px 16px;
+    }
+}

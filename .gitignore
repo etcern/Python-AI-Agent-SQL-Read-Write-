@@ -1,0 +1,16 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# --- Runtime data ---
+data/chat_history.db
+logs/actions.txt
+workspace/
+
+# --- Backups ---
+*.bak
+
+# --- IDE ---
+.vscode/
+.idea/

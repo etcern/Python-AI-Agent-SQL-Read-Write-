@@ -1,0 +1,899 @@
+:root {
+  /* Surface colors */
+  --color-bg:          #F7F5F0;     /* warm off-white page background    */
+  --color-surface:     #FFFFFF;     /* card / module background           */
+  --color-surface-alt: #F0EDE6;     /* subtle alternate surface           */
+  --color-border:      #E5E0D8;     /* card borders, dividers             */
+
+  /* Text colors */
+  --color-text:        #2D2B28;     /* primary body text                  */
+  --color-text-muted:  #7A7672;     /* secondary / helper text            */
+  --color-text-on-dark:#F7F5F0;     /* text on dark backgrounds           */
+
+  /* Brand / accent */
+  --color-accent:      #D97706;     /* primary accent — warm amber        */
+  --color-accent-soft: #FEF3C7;     /* light accent background            */
+
+  /* Semantic colors */
+  --color-blue:        #3B82F6;
+  --color-green:       #16A34A;
+  --color-orange:      #EA580C;
+  --color-purple:      #7C3AED;
+  --color-red:         #DC2626;
+  --color-teal:        #0D9488;
+  --color-yellow:      #CA8A04;
+
+  /* Typography */
+  --font-body:         'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono:         'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+
+  /* Spacing scale */
+  --space-xs:    4px;
+  --space-sm:    8px;
+  --space-md:   16px;
+  --space-lg:   24px;
+  --space-xl:   32px;
+  --space-2xl:  48px;
+
+  /* Border radius */
+  --radius-sm:   6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+
+  /* Shadows */
+  --shadow-sm:   0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md:   0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-lg:   0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+
+/* ----------------------------------------------------------
+   2. RESET & BASE
+   ---------------------------------------------------------- */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.65;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--color-surface-alt);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+
+/* ----------------------------------------------------------
+   3. LAYOUT
+   Container centers content and keeps lines readable.
+   ---------------------------------------------------------- */
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+}
+
+
+/* ----------------------------------------------------------
+   4. HEADER
+   Top bar with logo, title, and optional nav links.
+   ---------------------------------------------------------- */
+
+.header {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-md) 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+/* -- Logo area -- */
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  text-decoration: none;
+  color: var(--color-text);
+  flex-shrink: 0;
+}
+
+.header-logo:hover {
+  text-decoration: none;
+}
+
+.header-logo img,
+.header-logo svg {
+  height: 32px;
+  width: auto;
+}
+
+.header-logo-text {
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.3px;
+}
+
+.header-logo-text .highlight {
+  color: var(--color-accent);
+}
+
+/* -- Navigation links -- */
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.header-nav a {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  transition: background 0.15s, color 0.15s;
+}
+
+.header-nav a:hover,
+.header-nav a.active {
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+
+/* ----------------------------------------------------------
+   5. SECTIONS
+   Each major area of the page is a <section>.
+   ---------------------------------------------------------- */
+
+.section {
+  padding: var(--space-2xl) 0 var(--space-lg);
+}
+
+.section-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  margin-bottom: var(--space-xs);
+}
+
+.section-subtitle {
+  color: var(--color-text-muted);
+  font-size: 15px;
+  margin-bottom: var(--space-lg);
+}
+
+
+/* ----------------------------------------------------------
+   6. CARDS (Modules)
+   The main building block. Every feature gets a card.
+   ---------------------------------------------------------- */
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-md);
+}
+
+.card-header {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: var(--space-sm);
+}
+
+.card-body {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+
+/* ----------------------------------------------------------
+   7. GRID LAYOUTS
+   Use these to arrange cards in columns.
+   ---------------------------------------------------------- */
+
+.grid {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+/* Auto-fill variant for flexible widths */
+.grid-auto {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+
+/* ----------------------------------------------------------
+   8. BADGES & TAGS
+   Small labels for status, categories, etc.
+   ---------------------------------------------------------- */
+
+.badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 20px;
+  color: white;
+  vertical-align: middle;
+}
+
+.tag {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+}
+
+
+/* ----------------------------------------------------------
+   9. CODE BLOCKS
+   For showing SQL, Python, and other snippets.
+   ---------------------------------------------------------- */
+
+.code-block {
+  background: #1E1E1E;
+  color: #D4D4D4;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  white-space: pre;
+  line-height: 1.5;
+}
+
+
+/* ----------------------------------------------------------
+   10. ICON CARDS
+   Card with a large icon/emoji on top. Used for tools, etc.
+   ---------------------------------------------------------- */
+
+.icon-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  text-align: center;
+  transition: box-shadow 0.15s;
+}
+
+.icon-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.icon-card .icon {
+  font-size: 32px;
+  margin-bottom: var(--space-sm);
+}
+
+.icon-card h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+}
+
+.icon-card p {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+
+/* ----------------------------------------------------------
+   11. STEPS / TIMELINE
+   Vertical flow with numbered steps.
+   ---------------------------------------------------------- */
+
+.steps {
+  position: relative;
+  padding-left: 40px;
+}
+
+/* Vertical line connecting the dots */
+.steps::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-border);
+}
+
+.step {
+  position: relative;
+  margin-bottom: var(--space-lg);
+}
+
+/* Colored dot on the timeline */
+.step-dot {
+  position: absolute;
+  left: -33px;
+  top: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 3px solid var(--color-surface);
+  box-shadow: 0 0 0 2px currentColor;
+  z-index: 2;
+}
+
+.step h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+}
+
+.step p {
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+
+/* ----------------------------------------------------------
+   12. DOT INDICATOR
+   Small colored circle used in legends and labels.
+   ---------------------------------------------------------- */
+
+.dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+
+/* ----------------------------------------------------------
+   13. CALLOUT
+   Highlighted message box for tips, notes, warnings.
+   ---------------------------------------------------------- */
+
+.callout {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
+  border-left: 3px solid var(--color-accent);
+  font-size: 14px;
+}
+
+.callout-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+
+/* ----------------------------------------------------------
+   14. CHAT MESSAGES
+   Used in the interactive simulator.
+   ---------------------------------------------------------- */
+
+.chat-area {
+  min-height: 280px;
+  padding: var(--space-md);
+}
+
+.chat-msg {
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-md);
+  font-size: 14px;
+  max-width: 85%;
+  line-height: 1.5;
+}
+
+.chat-msg.user {
+  background: #EFF6FF;
+  margin-left: auto;
+  text-align: right;
+}
+
+.chat-msg.tool {
+  background: #ECFDF5;
+  border-left: 3px solid var(--color-green);
+}
+
+.chat-msg.thinking {
+  background: var(--color-accent-soft);
+  border-left: 3px solid var(--color-yellow);
+  font-style: italic;
+}
+
+.chat-msg.assistant {
+  background: var(--color-surface-alt);
+  border-left: 3px solid var(--color-purple);
+}
+
+.chat-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--space-xs);
+}
+
+
+/* ----------------------------------------------------------
+   15. BUTTONS
+   ---------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  border: none;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn-primary {
+  background: var(--color-accent);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #B45309;
+}
+
+.btn-secondary {
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-border);
+}
+
+
+/* ----------------------------------------------------------
+   16. SIMULATOR WRAPPER
+   The interactive demo module.
+   ---------------------------------------------------------- */
+
+.sim-wrap {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.sim-header {
+  background: var(--color-text);
+  color: var(--color-text-on-dark);
+  padding: var(--space-md) var(--space-lg);
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sim-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  border-top: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+
+
+/* ----------------------------------------------------------
+   17. ARCHITECTURE DIAGRAM
+   Clickable boxes connected by arrows.
+   ---------------------------------------------------------- */
+
+.arch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: var(--space-lg) 0;
+}
+
+.arch-row {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.arch-box {
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-md);
+  color: white;
+  font-weight: 700;
+  font-size: 15px;
+  text-align: center;
+  min-width: 160px;
+  cursor: pointer;
+  position: relative;
+}
+
+.arch-box small {
+  display: block;
+  font-weight: 400;
+  font-size: 12px;
+  opacity: 0.85;
+  margin-top: var(--space-xs);
+}
+
+.arch-arrow {
+  font-size: 24px;
+  color: var(--color-text-muted);
+  line-height: 1;
+  padding: var(--space-xs) 0;
+  user-select: none;
+}
+
+.arch-detail {
+  display: none;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 2px solid;
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  margin-top: var(--space-sm);
+  max-width: 400px;
+  font-weight: 400;
+  font-size: 14px;
+  text-align: left;
+}
+
+.arch-box.open .arch-detail {
+  display: block;
+}
+
+
+/* ----------------------------------------------------------
+   18. LEGEND
+   Color key shown near diagrams and charts.
+   ---------------------------------------------------------- */
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 13px;
+}
+
+
+/* ----------------------------------------------------------
+   19. FILE CARDS
+   Used in the project files section.
+   ---------------------------------------------------------- */
+
+.file-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border-left: 4px solid;
+  padding: var(--space-lg);
+}
+
+.file-card h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.file-card p {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.file-role {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 20px;
+  color: white;
+  margin-top: var(--space-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+
+/* ----------------------------------------------------------
+   20. BRIDGE CARDS
+   "You already know X → here's Y" learning pattern.
+   ---------------------------------------------------------- */
+
+.bridge-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+}
+
+.bridge-card h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: var(--space-sm);
+}
+
+.bridge-familiar {
+  font-size: 13px;
+  color: var(--color-green);
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+}
+
+.bridge-new {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  line-height: 1.55;
+}
+
+
+/* ----------------------------------------------------------
+   21. SCALING LADDER
+   Numbered vertical progression.
+   ---------------------------------------------------------- */
+
+.ladder {
+  display: flex;
+  flex-direction: column;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.ladder-step {
+  display: flex;
+  align-items: stretch;
+}
+
+.ladder-bar {
+  width: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.ladder-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-border);
+}
+
+.ladder-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: white;
+  z-index: 2;
+}
+
+.ladder-content {
+  flex: 1;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin: var(--space-sm) 0;
+}
+
+.ladder-content h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+}
+
+.ladder-content p {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.effort-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  color: white;
+  margin-top: var(--space-sm);
+}
+
+
+/* ----------------------------------------------------------
+   22. KEYWORD TOOLTIPS
+   Hover a highlighted word to see its definition.
+   ---------------------------------------------------------- */
+
+.kw {
+  display: inline-block;
+  position: relative;
+  background: #EFF6FF;
+  color: #1E40AF;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: help;
+  border-bottom: 2px dashed #93C5FD;
+}
+
+.kw:hover {
+  background: #DBEAFE;
+}
+
+.kw .tip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 260px;
+  background: var(--color-text);
+  color: var(--color-text-on-dark);
+  font-size: 13px;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-weight: 400;
+  line-height: 1.5;
+  box-shadow: var(--shadow-lg);
+  z-index: 50;
+  pointer-events: none;
+}
+
+.kw .tip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--color-text);
+}
+
+.kw:hover .tip {
+  display: block;
+}
+
+
+/* ----------------------------------------------------------
+   23. FOOTER
+   ---------------------------------------------------------- */
+
+.footer {
+  text-align: center;
+  padding: var(--space-2xl) var(--space-lg);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--space-2xl);
+}
+
+
+/* ----------------------------------------------------------
+   24. UTILITY CLASSES
+   Small helpers you can sprinkle on any element.
+   ---------------------------------------------------------- */
+
+.text-muted   { color: var(--color-text-muted); }
+.text-center  { text-align: center; }
+.text-sm      { font-size: 13px; }
+.text-lg      { font-size: 18px; }
+.font-bold    { font-weight: 700; }
+.mt-sm        { margin-top: var(--space-sm); }
+.mt-md        { margin-top: var(--space-md); }
+.mt-lg        { margin-top: var(--space-lg); }
+.mb-md        { margin-bottom: var(--space-md); }
+.mb-lg        { margin-bottom: var(--space-lg); }
+.flex-center  {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* ----------------------------------------------------------
+   25. RESPONSIVE
+   Stack columns on narrow screens.
+   ---------------------------------------------------------- */
+
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4, .grid-auto {
+    grid-template-columns: 1fr;
+  }
+
+  .arch-row {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .header .container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header-nav {
+    width: 100%;
+  }
+
+  .container {
+    padding: 0 var(--space-md);
+  }
+}
