@@ -13,3 +13,10 @@ This Project has been developed using the help of [ClaudeAI](https://claude.ai/)
 2. Clone the repository<br>
 3. Install the python libraries via the command  `pip install -r requirements.txt`(make sure you have [pip installed](https://pip.pypa.io/en/stable/installation/))<br>
 4. Start `server.py`
+
+---
+
+## To add a new agent:
+  1. Create a new agent file under `agents/agent_name.py`
+  2. Copy/Paste the current Arhitecture form an already existing agent.
+  3. Modify your `SYSTEM_PROMPT` to your liking

@@ -23,14 +23,6 @@ class ModelConfig:
     temperature: float
 
 
-# -- Default models per agent --
-AGENT_MODELS = {
-    "sql":        ModelConfig(name="qwen2.5-coder:7b", temperature=0),
-    "translator": ModelConfig(name="qwen2.5:7b", temperature=0),
-    "coder":      ModelConfig(name="qwen2.5-coder:14b", temperature=0),
-    "hacker":   ModelConfig(name="hf.co/Jiunsong/supergemma4-26b-uncensored-gguf-v2:latest", temperature=0),
-}
-
 FALLBACK_MODEL = ModelConfig(name="qwen2.5-coder:14b", temperature=0)
 
 
@@ -50,9 +42,21 @@ def create_model(config: ModelConfig, num_ctx: int = CONTEXT_WINDOW) -> BaseChat
 
 
 def create_model_for_agent(agent_name: str) -> BaseChatModel:
-    """Create a model using the agent's default config."""
-    config = AGENT_MODELS.get(agent_name, FALLBACK_MODEL)
-    return create_model(config)
+    """Create a model using the agent's default config.
+
+    Reads DEFAULT_MODEL and DEFAULT_TEMPERATURE from the agent class.
+    Falls back to FALLBACK_MODEL if the agent isn't registered.
+    """
+    from agents import AGENTS
+    agent_cls = AGENTS.get(agent_name)
+    if agent_cls:
+        cfg = ModelConfig(
+            name=agent_cls.DEFAULT_MODEL,
+            temperature=agent_cls.DEFAULT_TEMPERATURE,
+        )
+    else:
+        cfg = FALLBACK_MODEL
+    return create_model(cfg)
 
 
 # --- Ollama API ---

@@ -16,5 +16,7 @@ for _, module_name, _ in pkgutil.iter_modules([_pkg_dir]):
     module = importlib.import_module(f"agents.{module_name}")
     for attr_name in dir(module):
         obj = getattr(module,attr_name)
-        if (isinstance(obj, type)):
+        if (isinstance(obj, type)
+                and issubclass(obj, BaseAgent)
+                and obj is not BaseAgent):
             AGENTS[obj.AGENT_NAME] = obj

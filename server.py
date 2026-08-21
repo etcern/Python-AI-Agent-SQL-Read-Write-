@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from langchain_core.messages import AIMessage, HumanMessage
 
 from config import (
-    DB_PATH, CONTEXT_WINDOW, AGENT_MODELS,
+    DB_PATH, CONTEXT_WINDOW,
     ModelConfig, create_model, list_ollama_models,
 )
 from agents import AGENTS
@@ -30,20 +30,6 @@ from chat_store import (
 app = FastAPI(title="QueryMaster")
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
-
-
-# --- Agent display names ---
-
-AGENT_DISPLAY = {
-    "sql":        {"name": "SQL Assistant",
-                   "description": "Queries databases using natural language."},
-    "translator": {"name": "Translator",
-                   "description": "Translates text between languages."},
-    "coder":      {"name": "Coder",
-                   "description": "Writes, explains, and debugs code."},
-    "hacker":     {"name": "Hacker",
-                       "description": "Infiltrates databases and extracts data."},
-}
 
 
 # --- Request / response models ---
@@ -132,10 +118,9 @@ def api_create_chat(body: CreateChatBody):
     if body.agent not in AGENTS:
         raise HTTPException(400, f"Unknown agent: {body.agent}")
 
-    model_name = body.model
-    if model_name is None:
-        cfg = AGENT_MODELS.get(body.agent)
-        model_name = cfg.name if cfg else "qwen2.5-coder:7b"
+    # -- Read default model from the agent class --
+    agent_cls = AGENTS[body.agent]
+    model_name = body.model or agent_cls.DEFAULT_MODEL
 
     chat_id = uuid.uuid4().hex[:8]
     return create_chat(chat_id, body.agent, model_name)
@@ -166,8 +151,7 @@ def api_update_chat(chat_id: str, body: UpdateChatBody):
             raise HTTPException(400, f"Unknown agent: {body.agent}")
         updates["agent"] = body.agent
         if body.model is None:
-            cfg = AGENT_MODELS.get(body.agent)
-            updates["model"] = cfg.name if cfg else chat["model"]
+            updates["model"] = AGENTS[body.agent].DEFAULT_MODEL
 
     return update_chat(chat_id, **updates)
 
@@ -210,8 +194,7 @@ def api_send_message(chat_id: str, body: SendMessageBody):
     # -- Run the agent --
     try:
         agent = AGENTS[chat["agent"]]()
-        cfg = AGENT_MODELS.get(chat["agent"])
-        temperature = cfg.temperature if cfg else 0
+        temperature = AGENTS[chat["agent"]].DEFAULT_TEMPERATURE
 
         model = create_model(
             ModelConfig(name=chat["model"], temperature=temperature),
@@ -240,20 +223,22 @@ def api_send_message(chat_id: str, body: SendMessageBody):
 
 @app.get("/api/agents")
 def api_list_agents():
-    """All registered agents with display info, tools, and defaults."""
+    """All registered agents with display info, tools, and defaults.
+
+    Reads everything from the agent class — no separate display-name
+    or model-config dicts needed.
+    """
     result = []
-    for key in AGENTS:
-        info = AGENT_DISPLAY.get(key, {"name": key, "description": ""})
-        agent = AGENTS[key]()
+    for key, agent_cls in AGENTS.items():
+        agent = agent_cls()
         tools = [t.name for t in agent.get_all_tools()]
-        cfg = AGENT_MODELS.get(key)
         result.append({
             "key": key,
-            "name": info["name"],
-            "description": info["description"],
+            "name": agent_cls.DISPLAY_NAME,
+            "description": agent_cls.DESCRIPTION,
             "tools": tools,
-            "default_model": cfg.name if cfg else None,
-            "temperature": cfg.temperature if cfg else 0,
+            "default_model": agent_cls.DEFAULT_MODEL,
+            "temperature": agent_cls.DEFAULT_TEMPERATURE,
         })
     return result
 
