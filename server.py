@@ -25,6 +25,10 @@ from chat_store import (
     init_db, create_chat, list_chats, get_chat,
     update_chat, delete_chat, add_message, get_messages,
 )
+from knowledge_store import (
+    init_knowledge_db, save_entry, search_entries,
+    list_entries, get_entry, delete_entry,
+)
 
 
 # --- App setup ---
@@ -100,9 +104,10 @@ def _get_table_info() -> list[dict]:
     return result
 
 
-# --- Initialize DB on startup ---
+# --- Initialize DBs on startup ---
 
 init_db()
+init_knowledge_db()
 
 
 # --- API: Chats ---
@@ -304,6 +309,53 @@ def api_delete_upload(filename: str):
     if not os.path.exists(filepath):
         raise HTTPException(404, "File not found")
     os.remove(filepath)
+    return {"ok": True}
+
+
+# --- API: Knowledge base (Wissensdatenbank) ---
+# Ref: https://docs.python.org/3/library/sqlite3.html
+
+
+class SaveKnowledgeBody(BaseModel):
+    topic: str
+    content: str
+    source: str = "manual"
+
+
+@app.get("/api/knowledge")
+def api_list_knowledge(limit: int = 50):
+    """Most recent knowledge entries."""
+    return list_entries(limit=limit)
+
+
+@app.get("/api/knowledge/search")
+def api_search_knowledge(q: str = ""):
+    """Search knowledge by keyword."""
+    if not q.strip():
+        return []
+    return search_entries(q.strip())
+
+
+@app.post("/api/knowledge", status_code=201)
+def api_save_knowledge(body: SaveKnowledgeBody):
+    """Manually add a knowledge entry."""
+    return save_entry(body.topic, body.content, source=body.source)
+
+
+@app.get("/api/knowledge/{entry_id}")
+def api_get_knowledge(entry_id: int):
+    """Single knowledge entry by ID."""
+    entry = get_entry(entry_id)
+    if not entry:
+        raise HTTPException(404, "Knowledge entry not found")
+    return entry
+
+
+@app.delete("/api/knowledge/{entry_id}")
+def api_delete_knowledge(entry_id: int):
+    """Delete a knowledge entry."""
+    if not delete_entry(entry_id):
+        raise HTTPException(404, "Knowledge entry not found")
     return {"ok": True}
 
 
