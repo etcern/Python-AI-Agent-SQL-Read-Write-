@@ -12,7 +12,8 @@ This Project has been developed using the help of [ClaudeAI](https://claude.ai/)
 1. Install [Ollama](https://ollama.com) from their official WebSite.<br>
 2. Clone the repository<br>
 3. Install the python libraries via the command  `pip install -r requirements.txt`(make sure you have [pip installed](https://pip.pypa.io/en/stable/installation/))<br>
-4. Start `server.py`
+4. Open a terminal and type ollama pull [model name]. You can get models from [HuggingFace Website](https://huggingface.co) or from the [Ollama Website](https://ollama.com/search)<br>
+5. Start `server.py`
 
 ---
 
