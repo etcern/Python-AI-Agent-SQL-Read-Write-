@@ -55,6 +55,7 @@ class UpdateChatBody(BaseModel):
 class SendMessageBody(BaseModel):
     content: str
     context_window: int = CONTEXT_WINDOW
+    internet_enabled: bool = True
 
 
 # --- Helpers ---
@@ -66,7 +67,8 @@ def _auto_title(text: str) -> str:
 
 
 def _rebuild_langchain_history(agent_name: str,
-                               messages: list[dict]) -> list:
+                               messages: list[dict],
+                               include_internet: bool = True) -> list:
     """Build a LangChain message list from stored messages.
 
     Starts with the agent's SystemMessage, then converts each stored
@@ -74,7 +76,7 @@ def _rebuild_langchain_history(agent_name: str,
     NOT included — agent.ask() appends it itself.
     Ref: https://python.langchain.com/docs/concepts/messages
     """
-    agent = AGENTS[agent_name]()
+    agent = AGENTS[agent_name](include_internet=include_internet)
     history = agent.create_history()
     for msg in messages:
         if msg["role"] == "user":
@@ -196,11 +198,13 @@ def api_send_message(chat_id: str, body: SendMessageBody):
     # -- Rebuild history WITHOUT the message we just saved
     #    (agent.ask() appends it internally) --
     history_msgs = all_msgs[:-1]
-    lc_history = _rebuild_langchain_history(chat["agent"], history_msgs)
+    lc_history = _rebuild_langchain_history(
+        chat["agent"], history_msgs, include_internet=body.internet_enabled,
+    )
 
     # -- Run the agent --
     try:
-        agent = AGENTS[chat["agent"]]()
+        agent = AGENTS[chat["agent"]](include_internet=body.internet_enabled)
         temperature = AGENTS[chat["agent"]].DEFAULT_TEMPERATURE
 
         model = create_model(
