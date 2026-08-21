@@ -4,7 +4,7 @@ To create a new agent:
   1. Subclass BaseAgent
   2. Set AGENT_NAME, DESCRIPTION, and SYSTEM_PROMPT
   3. Override get_tools() to return the tools this agent can use
-  4. Register it in agents/__init__.py
+  4. Drop the file in agents/ — auto-discovery handles the rest
 """
 
 import json
@@ -19,6 +19,20 @@ from action_logger import log_query, log_tool_call, log_tool_result, log_respons
 MAX_ITERATIONS = 15
 
 
+# --- Tool usage guide ---
+# Appended to every agent's system prompt so they know the search priority
+# and auto-save useful findings to the knowledge base.
+
+TOOL_GUIDE = """
+TOOL USAGE PRIORITY:
+1. FIRST check the knowledge base (search_knowledge) — you may already know the answer from a previous session.
+2. THEN check local files (list_files, read_file) — the answer might be in the project.
+3. ONLY THEN search the internet (web_search) or GitHub (search_github, github_file) for external references.
+4. When you find useful code, patterns, or information — ALWAYS save it with save_knowledge so you remember it next time.
+   Use a clear topic (e.g. "python: flask routing", "sql: window functions") and include the source in the content.
+"""
+
+
 class BaseAgent:
     AGENT_NAME = "base"
     DISPLAY_NAME = "Base Agent"
@@ -27,13 +41,21 @@ class BaseAgent:
     DEFAULT_MODEL = "qwen2.5-coder:7b"
     DEFAULT_TEMPERATURE = 0.0
 
+    def __init__(self, include_internet: bool = True):
+        self.include_internet = include_internet
+
     def get_tools(self) -> list:
-        """Base tools for every agent: read-only files, knowledge base, web search.
+        """Base tools for every agent: read-only files + knowledge base.
+        When internet is enabled, also includes web search + GitHub.
         Override in subclasses and call super().get_tools() to keep these."""
         from tools.file_tools import get_file_read_tools
         from tools.knowledge import get_knowledge_tools
-        from tools.web_search import get_web_tools
-        return get_file_read_tools() + get_knowledge_tools() + get_web_tools()
+        tools = get_file_read_tools() + get_knowledge_tools()
+        if self.include_internet:
+            from tools.web_search import get_web_tools
+            from tools.github import get_github_tools
+            tools += get_web_tools() + get_github_tools()
+        return tools
 
     def get_all_tools(self, include_delegation: bool = True) -> list:
         tools = list(self.get_tools())
@@ -50,6 +72,7 @@ class BaseAgent:
             "{current_datetime}",
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
+        prompt += TOOL_GUIDE
         return [SystemMessage(content=prompt)]
 
     def bind_tools(self, model: BaseChatModel, include_delegation: bool = True) -> BaseChatModel:
