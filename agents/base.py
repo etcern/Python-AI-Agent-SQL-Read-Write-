@@ -28,10 +28,12 @@ class BaseAgent:
     DEFAULT_TEMPERATURE = 0.0
 
     def get_tools(self) -> list:
-        """Base tools for every agent: read-only file access.
+        """Base tools for every agent: read-only files, knowledge base, web search.
         Override in subclasses and call super().get_tools() to keep these."""
         from tools.file_tools import get_file_read_tools
-        return get_file_read_tools()
+        from tools.knowledge import get_knowledge_tools
+        from tools.web_search import get_web_tools
+        return get_file_read_tools() + get_knowledge_tools() + get_web_tools()
 
     def get_all_tools(self, include_delegation: bool = True) -> list:
         tools = list(self.get_tools())
