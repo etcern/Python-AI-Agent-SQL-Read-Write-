@@ -26,7 +26,10 @@ This Project has been developed using the help of [ClaudeAI](https://claude.ai/)
 
 ## Features:
 - **Web Search**: All agents can search the internet via DuckDuckGo. No API key needed.<br>
+- **GitHub Integration**: Agents can search GitHub repos, browse file trees, and fetch source code directly. They learn from the best public repositories.<br>
+- **Internet Toggle**: A button in the composer bar lets you manually enable/disable internet access (web search + GitHub). When OFF, agents work with local files and knowledge only.<br>
 - **Wissensdatenbank (Knowledge Base)**: Agents can save and retrieve learned information across sessions, so they get smarter over time.<br>
+- **Smart Search Priority**: Agents first check the knowledge base, then local files, then the internet. Useful findings get saved automatically for next time.<br>
 - **File Upload**: Upload files via the button or drag-and-drop them directly into the chat area. Agents can read and list uploaded files.<br>
 - **Modular Tools**: Each agent gets read-only file access, knowledge base, and web search by default. Add more tools (database, file write) per agent as needed.<br>
 - **Auto-Discovery**: Drop a new agent file in `agents/` and it just works. No manual registration.
