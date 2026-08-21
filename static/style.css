@@ -823,6 +823,107 @@ body.sidebar-collapsed .hamburger {
 }
 
 
+/* --- Upload badge + file list --- */
+
+/* -- Small count badge on the attach button -- */
+.upload-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.upload-badge.hidden {
+    display: none;
+}
+
+#btn-attach {
+    position: relative;
+}
+
+/* -- Upload button inside the files dropdown -- */
+.upload-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--fg);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: var(--user-font);
+}
+
+.upload-btn:hover {
+    background: var(--hover);
+}
+
+/* -- Individual file row in the dropdown -- */
+.file-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--fg);
+}
+
+.file-row:hover {
+    background: var(--hover);
+}
+
+.file-row .file-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-row .file-size {
+    color: var(--muted);
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.file-row .file-delete {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.file-row .file-delete:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.muted-text {
+    color: var(--muted);
+    font-size: 12px;
+    padding: 4px;
+}
+
+
 /* --- Responsive ---
    On screens narrower than 768px, sidebar becomes an overlay.
    Ref: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_media_queries */

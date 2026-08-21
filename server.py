@@ -8,14 +8,16 @@ import os
 import sqlite3
 import uuid
 
-from fastapi import FastAPI, HTTPException
+from pathlib import PurePosixPath
+
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from langchain_core.messages import AIMessage, HumanMessage
 
 from config import (
-    DB_PATH, CONTEXT_WINDOW,
+    DB_PATH, CONTEXT_WINDOW, UPLOAD_DIR,
     ModelConfig, create_model, list_ollama_models,
 )
 from agents import AGENTS
@@ -257,6 +259,52 @@ def api_list_models():
 def api_db_info():
     """Table names + row counts from ecommerce.db."""
     return {"tables": _get_table_info()}
+
+
+# --- API: File uploads ---
+# Ref: https://fastapi.tiangolo.com/tutorial/request-files/
+
+def _safe_filename(name: str) -> str:
+    """Strip directory components to prevent path traversal.
+    Ref: https://docs.python.org/3/library/pathlib.html#pathlib.PurePosixPath
+    """
+    return PurePosixPath(name).name
+
+
+@app.post("/api/uploads", status_code=201)
+async def api_upload_file(file: UploadFile = File(...)):
+    """Save an uploaded file to workspace/uploads/."""
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    safe_name = _safe_filename(file.filename or "unnamed")
+    filepath = os.path.join(UPLOAD_DIR, safe_name)
+    content = await file.read()
+    with open(filepath, "wb") as f:
+        f.write(content)
+    return {"name": safe_name, "size": len(content)}
+
+
+@app.get("/api/uploads")
+def api_list_uploads():
+    """List all files in workspace/uploads/."""
+    if not os.path.exists(UPLOAD_DIR):
+        return []
+    files = []
+    for name in sorted(os.listdir(UPLOAD_DIR)):
+        path = os.path.join(UPLOAD_DIR, name)
+        if os.path.isfile(path):
+            files.append({"name": name, "size": os.path.getsize(path)})
+    return files
+
+
+@app.delete("/api/uploads/{filename}")
+def api_delete_upload(filename: str):
+    """Remove an uploaded file."""
+    safe_name = _safe_filename(filename)
+    filepath = os.path.join(UPLOAD_DIR, safe_name)
+    if not os.path.exists(filepath):
+        raise HTTPException(404, "File not found")
+    os.remove(filepath)
+    return {"ok": True}
 
 
 # --- Static files + SPA fallback ---

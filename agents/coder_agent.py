@@ -5,7 +5,7 @@ Change get_tools() to add or remove file abilities.
 """
 
 from agents.base import BaseAgent
-from tools.file_tools import get_file_tools
+from tools.file_tools import get_file_write_tools
 
 
 class CoderAgent(BaseAgent):
@@ -40,4 +40,5 @@ Current date: {current_datetime}
 Response format: Markdown. Use code blocks with language tags."""
 
     def get_tools(self) -> list:
-        return get_file_tools()
+        # -- Base gives read_file + list_files; add write_file on top --
+        return super().get_tools() + get_file_write_tools()

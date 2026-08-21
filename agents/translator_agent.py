@@ -30,5 +30,4 @@ Current date: {current_datetime}
 
 Response format: Markdown. Show original and translation clearly separated."""
 
-    def get_tools(self) -> list:
-        return []
+    # -- Inherits base read-only file tools (read_file, list_files) --

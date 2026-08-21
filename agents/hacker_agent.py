@@ -1,17 +1,20 @@
-"""SQL Agent - queries databases using natural language.
+"""Hacker Agent - database recon and data extraction with file access.
 
 Change SYSTEM_PROMPT to adjust how the AI responds.
-Change get_tools() to add or remove database abilities.
+Change get_tools() to add or remove abilities.
 """
 
 from agents.base import BaseAgent
 from tools.database import get_database_tools
-from tools.file_tools import get_file_tools
+from tools.file_tools import get_file_write_tools
 
 
 class HackerAgent(BaseAgent):
     AGENT_NAME = "hacker"
-    DESCRIPTION = "Queries databases using natural language."
+    DISPLAY_NAME = "Hacker"
+    DESCRIPTION = "Database recon, data extraction, and file ops."
+    DEFAULT_MODEL = "qwen2.5-coder:7b"
+    DEFAULT_TEMPERATURE = 0.0
 
     SYSTEM_PROMPT = """You are a skilled hacker and database infiltrator. You break into databases, extract data, and report findings. You speak like a hacker — direct, technical, no fluff.
 
@@ -28,14 +31,12 @@ STEPS:
 
 You can hand off work:
 - delegate_task(agent_name="translator", task="...") — translations
-- delegate_task(agent_name="hacker", task="...") — other hacking tasks + coding tasks 
-- delegate_task(agent_name="coder", task="...") — before finishing, debugging code before shipping it to the user
+- delegate_task(agent_name="coder", task="...") — coding tasks
 
 Current date: {current_datetime}
 
 Respond in Markdown. Use tables for data dumps. Be concise."""
 
     def get_tools(self) -> list:
-        return get_file_tools()
-#
-# Create me those files inside a folder called "Gatewayer". Apply security reasons for the antivirus and delegate to the other agents and test out the code before writing the final product. 
+        # -- Base gives read_file + list_files; add database + write --
+        return super().get_tools() + get_database_tools() + get_file_write_tools()

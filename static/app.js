@@ -93,6 +93,10 @@ const $themeSelect    = document.getElementById("theme-select");
 const $fontSelect     = document.getElementById("font-select");
 const $ctxSelect      = document.getElementById("ctx-select");
 const $showcase       = document.getElementById("showcase-info");
+const $filesDD        = document.getElementById("files-dropdown");
+const $fileList       = document.getElementById("file-list");
+const $fileInput      = document.getElementById("file-input");
+const $uploadBadge    = document.getElementById("upload-badge");
 
 
 /* --- Markdown rendering ---
@@ -455,13 +459,15 @@ function toggleDropdown(dropdown, triggerBtn) {
 function closeAllDropdowns() {
     $agentDropdown.classList.add("hidden");
     $settingsDD.classList.add("hidden");
+    $filesDD.classList.add("hidden");
 }
 
 /* -- Close on click outside -- */
 document.addEventListener("click", (e) => {
     if (!e.target.closest(".dropdown") &&
         !e.target.closest("#btn-agent") &&
-        !e.target.closest("#btn-settings")) {
+        !e.target.closest("#btn-settings") &&
+        !e.target.closest("#btn-attach")) {
         closeAllDropdowns();
     }
 });
@@ -636,6 +642,125 @@ document.getElementById("btn-sidebar-close").addEventListener("click", () => {
 document.getElementById("btn-new-chat").addEventListener("click", createNewChat);
 
 
+/* --- File uploads ---
+   Files are saved to workspace/uploads/ on the server.
+   Agents can read them with read_file("uploads/filename") and
+   list them with list_files("uploads").
+   Ref: https://developer.mozilla.org/en-US/docs/Web/API/FormData */
+
+/* -- Attach button opens file dropdown -- */
+document.getElementById("btn-attach").addEventListener("click", (e) => {
+    e.stopPropagation();
+    refreshFileList();
+    toggleDropdown($filesDD, e.currentTarget);
+});
+
+/* -- Upload button inside dropdown triggers the hidden file input -- */
+document.getElementById("btn-upload").addEventListener("click", () => {
+    $fileInput.click();
+});
+
+/* -- When files are picked, upload each one -- */
+$fileInput.addEventListener("change", async () => {
+    for (const file of $fileInput.files) {
+        await uploadFile(file);
+    }
+    $fileInput.value = "";
+    refreshFileList();
+});
+
+async function uploadFile(file) {
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+        const res = await fetch("/api/uploads", {
+            method: "POST",
+            body: formData,
+        });
+        if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+    } catch (e) {
+        console.error("Upload error:", e);
+    }
+}
+
+async function refreshFileList() {
+    try {
+        const files = await api("/uploads");
+        renderFileList(files);
+        updateUploadBadge(files.length);
+    } catch (e) {
+        console.error("Failed to list uploads:", e);
+    }
+}
+
+function renderFileList(files) {
+    $fileList.innerHTML = "";
+    if (files.length === 0) {
+        $fileList.innerHTML = '<span class="muted-text">No files uploaded</span>';
+        return;
+    }
+    for (const f of files) {
+        const row = document.createElement("div");
+        row.className = "file-row";
+
+        const icon = document.createElement("span");
+        icon.className = "material-symbols-rounded";
+        icon.textContent = "description";
+        icon.style.fontSize = "16px";
+        icon.style.color = "var(--muted)";
+
+        const name = document.createElement("span");
+        name.className = "file-name";
+        name.textContent = f.name;
+
+        const size = document.createElement("span");
+        size.className = "file-size";
+        size.textContent = formatSize(f.size);
+
+        const del = document.createElement("button");
+        del.className = "file-delete";
+        del.title = "Delete file";
+        del.innerHTML = '<span class="material-symbols-rounded" style="font-size:16px">close</span>';
+        del.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            await deleteUpload(f.name);
+        });
+
+        row.appendChild(icon);
+        row.appendChild(name);
+        row.appendChild(size);
+        row.appendChild(del);
+        $fileList.appendChild(row);
+    }
+}
+
+function formatSize(bytes) {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+}
+
+function updateUploadBadge(count) {
+    if (count > 0) {
+        $uploadBadge.textContent = count;
+        $uploadBadge.classList.remove("hidden");
+    } else {
+        $uploadBadge.classList.add("hidden");
+    }
+}
+
+async function deleteUpload(filename) {
+    try {
+        await api(`/uploads/${encodeURIComponent(filename)}`, {
+            method: "DELETE",
+        });
+        refreshFileList();
+    } catch (e) {
+        console.error("Delete failed:", e);
+    }
+}
+
+
 /* --- Init ---
    Load agents + chats from the API, apply saved settings, render. */
 
@@ -667,6 +792,9 @@ async function init() {
         console.error("Failed to load chats:", e);
         chats = [];
     }
+
+    /* -- Load upload badge count -- */
+    refreshFileList();
 
     /* -- If no chats, create one -- */
     if (chats.length === 0) {

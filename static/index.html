@@ -86,6 +86,10 @@
             <div id="composer-inner">
                 <textarea id="input" placeholder="Message QueryMaster..." rows="1"></textarea>
                 <div id="composer-buttons">
+                    <button id="btn-attach" class="icon-btn" title="Upload files">
+                        <span class="material-symbols-rounded">attach_file</span>
+                        <span id="upload-badge" class="upload-badge hidden">0</span>
+                    </button>
                     <button id="btn-agent" class="pill-btn" title="Switch agent">
                         <span class="material-symbols-rounded">smart_toy</span>
                         <span id="agent-label">SQL Assistant</span>
@@ -102,6 +106,18 @@
         </div>
     </main>
 </div>
+
+<!-- --- Files dropdown --- -->
+<div id="files-dropdown" class="dropdown hidden">
+    <div class="dropdown-header">Uploaded Files</div>
+    <div id="file-list"><span class="muted-text">No files uploaded</span></div>
+    <hr class="dropdown-divider">
+    <button id="btn-upload" class="upload-btn">
+        <span class="material-symbols-rounded">upload_file</span>
+        Upload file
+    </button>
+</div>
+<input type="file" id="file-input" hidden multiple>
 
 <!-- --- Agent picker dropdown --- -->
 <div id="agent-dropdown" class="dropdown hidden">

@@ -39,4 +39,4 @@ class SQLAgent(BaseAgent):
     Response format: Markdown. Use tables and bullet points. Keep it concise."""
 
     def get_tools(self) -> list:
-        return get_database_tools()
+        return super().get_tools() + get_database_tools()

@@ -11,6 +11,8 @@ from langchain_core.language_models import BaseChatModel
 # --- Paths and URLs ---
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "data", "ecommerce.db")
+WORKSPACE_DIR = os.path.join(os.path.dirname(__file__), "workspace")
+UPLOAD_DIR = os.path.join(WORKSPACE_DIR, "uploads")
 CONTEXT_WINDOW = 8192
 OLLAMA_URL = "http://127.0.0.1:11434"
 
