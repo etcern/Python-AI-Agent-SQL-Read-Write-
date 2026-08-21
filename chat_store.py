@@ -1,4 +1,4 @@
-"""Chat persistence — SQLite CRUD for chats and messages.
+"""Chat persistence - SQLite CRUD for chats and messages.
 
 Ref: https://docs.python.org/3/library/sqlite3.html
 """

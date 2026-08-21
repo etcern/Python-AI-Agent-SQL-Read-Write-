@@ -1,4 +1,4 @@
-"""Knowledge base tools — let agents save and retrieve learned information.
+"""Knowledge base tools - let agents save and retrieve learned information.
 
 Agents call save_knowledge() to store useful findings (query patterns,
 web search results, translations, code snippets). On future requests,
@@ -46,7 +46,7 @@ def search_knowledge(query: str, reasoning: str = "") -> str:
     """Search the knowledge base for previously saved information.
 
     Check this BEFORE doing expensive operations (web search, database
-    queries) — the answer might already be stored.
+    queries) - the answer might already be stored.
 
     Args:
         query: What to search for (keywords or a short phrase).
@@ -72,5 +72,5 @@ def search_knowledge(query: str, reasoning: str = "") -> str:
 # --- Accessor ---
 
 def get_knowledge_tools() -> list:
-    """Knowledge base tools — save and search learned information."""
+    """Knowledge base tools - save and search learned information."""
     return [save_knowledge, search_knowledge]

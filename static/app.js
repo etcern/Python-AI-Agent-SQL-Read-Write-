@@ -1,4 +1,4 @@
-/* --- QueryMaster — Frontend Logic ---
+/* --- QueryMaster - Frontend Logic ---
    Pure JS, no framework. Communicates with the FastAPI backend via fetch.
    State lives in memory; user preferences persist to localStorage.
    Ref: https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API */
@@ -22,6 +22,7 @@ let chats = [];
 let agents = [];
 let renamingId = null;
 let internetEnabled = localStorage.getItem("qm_internet") !== "false";
+let confirmationMode = localStorage.getItem("qm_confirm") === "true";
 
 
 /* --- Settings (persisted to localStorage) ---
@@ -288,7 +289,7 @@ function renderMessages(msgs) {
     scrollToBottom();
 }
 
-function appendMessage(role, content) {
+function appendMessage(role, content, toolEvents = []) {
     $welcome.classList.add("hidden");
 
     const row = document.createElement("div");
@@ -305,11 +306,23 @@ function appendMessage(role, content) {
     /* -- Content -- */
     const body = document.createElement("div");
     body.className = "msg-content";
+
     if (role === "assistant") {
+        /* -- Thought process panel (before message content) -- */
+        if (toolEvents.length > 0) {
+            body.appendChild(renderThoughtProcess(toolEvents));
+        }
+
         if (content.startsWith("Error:")) {
-            body.innerHTML = `<div class="msg-error">${escapeHtml(content)}</div>`;
+            const errDiv = document.createElement("div");
+            errDiv.className = "msg-error";
+            errDiv.textContent = content;
+            body.appendChild(errDiv);
         } else {
-            body.innerHTML = renderMarkdown(content);
+            const contentDiv = document.createElement("div");
+            contentDiv.innerHTML = renderMarkdown(content);
+            body.appendChild(contentDiv);
+            addCopyButtons(contentDiv);
         }
     } else {
         body.textContent = content;
@@ -318,6 +331,103 @@ function appendMessage(role, content) {
     row.appendChild(avatar);
     row.appendChild(body);
     $messages.appendChild(row);
+}
+
+
+/* --- Thought process panel ---
+   Collapsible section showing each tool call with severity badge.
+   Ref: https://developer.mozilla.org/en-US/docs/Web/API/Element/classList */
+
+function renderThoughtProcess(toolEvents) {
+    const container = document.createElement("div");
+    container.className = "thought-process";
+
+    /* -- Toggle header -- */
+    const toggle = document.createElement("button");
+    toggle.className = "thought-toggle";
+    const count = toolEvents.length;
+    toggle.innerHTML = `
+        <span class="material-symbols-rounded">psychology</span>
+        <span>Thought Process (${count} step${count > 1 ? "s" : ""})</span>
+        <span class="material-symbols-rounded thought-arrow">expand_more</span>
+    `;
+
+    /* -- Steps list -- */
+    const steps = document.createElement("div");
+    steps.className = "thought-steps hidden";
+
+    const badges = { low: "\u{1F7E2}", medium: "\u{1F7E1}", high: "\u{1F534}" };
+
+    for (const evt of toolEvents) {
+        const step = document.createElement("div");
+        step.className = `thought-step severity-${evt.severity || "low"}`;
+
+        const badge = badges[evt.severity] || badges.low;
+        const argsStr = Object.entries(evt.args || {})
+            .map(([k, v]) => {
+                const val = typeof v === "string" && v.length > 60
+                    ? v.slice(0, 60) + "..." : v;
+                return `${k}: ${val}`;
+            })
+            .join(", ");
+
+        let html = `<div class="step-header">
+            <span class="severity-badge">${badge}</span>
+            <span class="step-tool">${escapeHtml(evt.tool)}</span>
+            <span class="step-args">${escapeHtml(argsStr)}</span>
+        </div>`;
+
+        if (evt.reasoning) {
+            html += `<div class="step-reasoning">${escapeHtml(evt.reasoning)}</div>`;
+        }
+        if (evt.result) {
+            html += `<div class="step-result">${escapeHtml(evt.result.slice(0, 300))}</div>`;
+        }
+
+        step.innerHTML = html;
+        steps.appendChild(step);
+    }
+
+    toggle.addEventListener("click", () => {
+        steps.classList.toggle("hidden");
+        const arrow = toggle.querySelector(".thought-arrow");
+        arrow.textContent = steps.classList.contains("hidden")
+            ? "expand_more" : "expand_less";
+    });
+
+    container.appendChild(toggle);
+    container.appendChild(steps);
+    return container;
+}
+
+
+/* --- Copy button on code blocks ---
+   Added after markdown render on every <pre> block.
+   Ref: https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/writeText */
+
+function addCopyButtons(container) {
+    container.querySelectorAll("pre").forEach(pre => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "code-block-wrapper";
+        pre.parentNode.insertBefore(wrapper, pre);
+        wrapper.appendChild(pre);
+
+        const btn = document.createElement("button");
+        btn.className = "copy-btn";
+        btn.title = "Copy code";
+        btn.innerHTML = '<span class="material-symbols-rounded">content_copy</span>';
+
+        btn.addEventListener("click", () => {
+            const code = pre.querySelector("code");
+            navigator.clipboard.writeText(code ? code.textContent : pre.textContent);
+            btn.innerHTML = '<span class="material-symbols-rounded">check</span>';
+            setTimeout(() => {
+                btn.innerHTML = '<span class="material-symbols-rounded">content_copy</span>';
+            }, 2000);
+        });
+
+        wrapper.appendChild(btn);
+    });
 }
 
 function escapeHtml(str) {
@@ -388,11 +498,12 @@ async function sendMessage() {
                 content: text,
                 context_window: settings.contextWindow,
                 internet_enabled: internetEnabled,
+                confirmation_mode: confirmationMode,
             }),
         });
 
         hideLoading();
-        appendMessage("assistant", data.content);
+        appendMessage("assistant", data.content, data.tool_events || []);
         scrollToBottom();
 
         /* -- Update chat title in sidebar if it changed -- */
@@ -516,6 +627,30 @@ $internetBtn.addEventListener("click", (e) => {
     internetEnabled = !internetEnabled;
     localStorage.setItem("qm_internet", String(internetEnabled));
     updateInternetButton();
+});
+
+
+/* --- Confirmation toggle ---
+   ON = agent asks before write/modify operations. OFF = executes freely.
+   Ref: https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage */
+
+const $confirmBtn = document.getElementById("btn-confirm");
+
+function updateConfirmButton() {
+    if (confirmationMode) {
+        $confirmBtn.classList.add("active");
+        $confirmBtn.title = "Confirmation mode on - agent asks before changes";
+    } else {
+        $confirmBtn.classList.remove("active");
+        $confirmBtn.title = "Confirmation mode off";
+    }
+}
+
+$confirmBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    confirmationMode = !confirmationMode;
+    localStorage.setItem("qm_confirm", String(confirmationMode));
+    updateConfirmButton();
 });
 
 
@@ -644,7 +779,7 @@ function populateShowcase() {
             if (data.tables && data.tables.length) {
                 let dbHtml = `<hr class="dropdown-divider"><div class="dropdown-header" style="padding-top:8px">Database</div>`;
                 for (const t of data.tables) {
-                    dbHtml += `<div>${t.name} — ${t.rows.toLocaleString()} rows</div>`;
+                    dbHtml += `<div>${t.name} - ${t.rows.toLocaleString()} rows</div>`;
                 }
                 $showcase.innerHTML += dbHtml;
             }
@@ -851,6 +986,7 @@ async function init() {
     applyFont(s.font);
     initSettingsControls();
     updateInternetButton();
+    updateConfirmButton();
 
     /* -- Collapse sidebar on mobile by default -- */
     if (window.innerWidth <= 768) {

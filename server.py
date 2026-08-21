@@ -1,4 +1,4 @@
-"""QueryMaster — FastAPI backend serving the chat API and static frontend.
+"""QueryMaster - FastAPI backend serving the chat API and static frontend.
 
 Ref: https://fastapi.tiangolo.com/
 Ref: https://fastapi.tiangolo.com/tutorial/static-files/
@@ -56,6 +56,7 @@ class SendMessageBody(BaseModel):
     content: str
     context_window: int = CONTEXT_WINDOW
     internet_enabled: bool = True
+    confirmation_mode: bool = False
 
 
 # --- Helpers ---
@@ -68,15 +69,17 @@ def _auto_title(text: str) -> str:
 
 def _rebuild_langchain_history(agent_name: str,
                                messages: list[dict],
-                               include_internet: bool = True) -> list:
+                               include_internet: bool = True,
+                               confirmation_mode: bool = False) -> list:
     """Build a LangChain message list from stored messages.
 
     Starts with the agent's SystemMessage, then converts each stored
     row into HumanMessage / AIMessage.  The latest user message is
-    NOT included — agent.ask() appends it itself.
+    NOT included - agent.ask() appends it itself.
     Ref: https://python.langchain.com/docs/concepts/messages
     """
-    agent = AGENTS[agent_name](include_internet=include_internet)
+    agent = AGENTS[agent_name](include_internet=include_internet,
+                               confirmation_mode=confirmation_mode)
     history = agent.create_history()
     for msg in messages:
         if msg["role"] == "user":
@@ -199,12 +202,17 @@ def api_send_message(chat_id: str, body: SendMessageBody):
     #    (agent.ask() appends it internally) --
     history_msgs = all_msgs[:-1]
     lc_history = _rebuild_langchain_history(
-        chat["agent"], history_msgs, include_internet=body.internet_enabled,
+        chat["agent"], history_msgs,
+        include_internet=body.internet_enabled,
+        confirmation_mode=body.confirmation_mode,
     )
 
     # -- Run the agent --
     try:
-        agent = AGENTS[chat["agent"]](include_internet=body.internet_enabled)
+        agent = AGENTS[chat["agent"]](
+            include_internet=body.internet_enabled,
+            confirmation_mode=body.confirmation_mode,
+        )
         temperature = AGENTS[chat["agent"]].DEFAULT_TEMPERATURE
 
         model = create_model(
@@ -220,12 +228,16 @@ def api_send_message(chat_id: str, body: SendMessageBody):
     except Exception as exc:
         response = f"Error: {exc}"
 
+    # -- Collect tool events before overwrite on error --
+    tool_events = getattr(agent, "tool_events", [])
+
     # -- Persist assistant response --
     add_message(chat_id, "assistant", response)
 
     return {
         "role": "assistant",
         "content": response,
+        "tool_events": tool_events,
         "chat": get_chat(chat_id),
     }
 
@@ -236,7 +248,7 @@ def api_send_message(chat_id: str, body: SendMessageBody):
 def api_list_agents():
     """All registered agents with display info, tools, and defaults.
 
-    Reads everything from the agent class — no separate display-name
+    Reads everything from the agent class - no separate display-name
     or model-config dicts needed.
     """
     result = []

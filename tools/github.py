@@ -1,7 +1,7 @@
-"""GitHub tools — let agents search repos, browse files, and fetch code.
+"""GitHub tools - let agents search repos, browse files, and fetch code.
 
 Uses the public GitHub API (no API key needed for public repos).
-Rate limit: 60 requests/hour without a token — plenty for local use.
+Rate limit: 60 requests/hour without a token - plenty for local use.
 Ref: https://docs.github.com/en/rest
 Ref: https://docs.python.org/3/library/urllib.request.html
 """
@@ -164,7 +164,7 @@ def github_file(owner: str, repo: str, path: str, branch: str = "main", reasonin
 
     # -- Truncate very large files --
     if len(content) > 15000:
-        content = content[:15000] + "\n\n... [truncated — file too large, fetch a specific section]"
+        content = content[:15000] + "\n\n... [truncated - file too large, fetch a specific section]"
 
     log_panel(f"{len(content)} chars", title="github_file - Fetched")
     return content
@@ -173,5 +173,5 @@ def github_file(owner: str, repo: str, path: str, branch: str = "main", reasonin
 # --- Accessor ---
 
 def get_github_tools() -> list:
-    """GitHub tools — search repos, browse files, fetch code."""
+    """GitHub tools - search repos, browse files, fetch code."""
     return [search_github, github_tree, github_file]

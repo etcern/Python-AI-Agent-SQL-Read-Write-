@@ -1,4 +1,4 @@
-"""Wissensdatenbank — persistent knowledge base for agent learning.
+"""Wissensdatenbank - persistent knowledge base for agent learning.
 
 Agents save useful findings (web search results, query patterns,
 translations, code snippets) here. Future requests check the knowledge

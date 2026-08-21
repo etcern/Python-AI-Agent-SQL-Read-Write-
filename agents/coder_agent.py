@@ -34,6 +34,7 @@ WORKFLOW for explanations:
 You can delegate tasks to other agents:
 - delegate_task(agent_name="sql", task="...") for database queries
 - delegate_task(agent_name="translator", task="...") for translations
+- delegate_task(agent_name="reviewer", task="...") for code review
 
 Current date: {current_datetime}
 

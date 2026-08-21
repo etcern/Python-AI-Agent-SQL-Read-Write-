@@ -1,4 +1,4 @@
-/* --- QueryMaster — Pure HTML/CSS/JS Chat Interface ---
+/* --- QueryMaster - Pure HTML/CSS/JS Chat Interface ---
    No Streamlit. Colors come from CSS custom properties switched
    by adding a theme class to <body>.
    Ref: https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties */
@@ -478,6 +478,76 @@ body.sidebar-collapsed .hamburger {
     font-family: 'JetBrains Mono', 'Consolas', monospace;
 }
 
+/* -- Code syntax colors - warmer palette that matches the app theme --
+   Overrides highlight.js atom-one-dark to feel more natural.
+   Ref: https://highlightjs.readthedocs.io/en/latest/css-classes-reference.html */
+
+.hljs { background: transparent; color: #c8ccd4; }
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-type { color: #d19a66; }
+.hljs-string,
+.hljs-meta .hljs-string { color: #89b482; }
+.hljs-comment,
+.hljs-quote { color: #5c6370; font-style: italic; }
+.hljs-function .hljs-title,
+.hljs-title.function_,
+.hljs-title { color: #7fb4ca; }
+.hljs-number,
+.hljs-literal { color: #c8a3d8; }
+.hljs-built_in { color: #e0af68; }
+.hljs-attr,
+.hljs-attribute { color: #d19a66; }
+.hljs-variable,
+.hljs-template-variable { color: #e06c75; }
+.hljs-params { color: #abb2bf; }
+.hljs-regexp { color: #89b482; }
+.hljs-meta { color: #7fb4ca; }
+.hljs-tag { color: #e06c75; }
+.hljs-name { color: #e06c75; }
+.hljs-selector-class,
+.hljs-selector-id { color: #d19a66; }
+
+/* -- Code block wrapper for copy button positioning -- */
+.code-block-wrapper {
+    position: relative;
+}
+
+/* -- Copy button - top-right corner of code blocks -- */
+.copy-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 6px;
+    background: var(--border);
+    color: var(--muted);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s, background 0.15s, color 0.15s;
+    z-index: 10;
+}
+
+.code-block-wrapper:hover .copy-btn {
+    opacity: 1;
+}
+
+.copy-btn:hover {
+    background: var(--accent);
+    color: #fff;
+}
+
+.copy-btn .material-symbols-rounded {
+    font-family: 'Material Symbols Rounded' !important;
+    font-size: 16px;
+}
+
+
 /* -- Tables -- */
 .msg-content table {
     border-collapse: collapse;
@@ -921,6 +991,152 @@ body.sidebar-collapsed .hamburger {
     color: var(--muted);
     font-size: 12px;
     padding: 4px;
+}
+
+
+/* --- Thought process panel ---
+   Collapsible section inside assistant messages showing tool calls,
+   reasoning, results, and severity badges.
+   Ref: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_flexible_box_layout */
+
+.thought-process {
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* -- Toggle button (header) -- */
+.thought-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: color-mix(in srgb, var(--border) 40%, transparent);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    font-family: var(--user-font);
+}
+
+.thought-toggle:hover {
+    background: var(--hover);
+    color: var(--fg);
+}
+
+.thought-toggle .material-symbols-rounded {
+    font-family: 'Material Symbols Rounded' !important;
+    font-size: 18px;
+}
+
+.thought-toggle .thought-arrow {
+    margin-left: auto;
+    font-size: 18px;
+}
+
+/* -- Steps container -- */
+.thought-steps {
+    padding: 4px 8px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.thought-steps.hidden {
+    display: none;
+}
+
+/* -- Single step row -- */
+.thought-step {
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.5;
+    border-left: 3px solid var(--border);
+}
+
+.thought-step.severity-low    { border-left-color: #4ade80; }
+.thought-step.severity-medium { border-left-color: #fbbf24; }
+.thought-step.severity-high   { border-left-color: #ef4444; }
+
+/* -- Step header: badge + tool name + args -- */
+.step-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.severity-badge {
+    font-size: 10px;
+    flex-shrink: 0;
+}
+
+.step-tool {
+    font-weight: 600;
+    color: var(--fg);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+}
+
+.step-args {
+    color: var(--muted);
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 350px;
+}
+
+/* -- Reasoning line (optional) -- */
+.step-reasoning {
+    color: var(--muted);
+    font-style: italic;
+    font-size: 11px;
+    padding: 2px 0 0 22px;
+}
+
+/* -- Result preview -- */
+.step-result {
+    color: var(--muted);
+    font-size: 11px;
+    padding: 2px 0 0 22px;
+    max-height: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+
+/* --- Confirmation toggle button ---
+   Shield icon: accent when ON, muted when OFF. */
+
+.confirm-toggle .material-symbols-rounded {
+    font-family: 'Material Symbols Rounded' !important;
+    transition: color 0.15s;
+}
+
+.confirm-toggle.active {
+    color: #fbbf24;
+}
+
+.confirm-toggle.active:hover {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+}
+
+.confirm-toggle:not(.active) {
+    color: var(--muted);
+    opacity: 0.5;
+}
+
+.confirm-toggle:not(.active):hover {
+    opacity: 0.8;
 }
 
 

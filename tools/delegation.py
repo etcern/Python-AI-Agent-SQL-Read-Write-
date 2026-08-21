@@ -20,6 +20,8 @@ def delegate_task(agent_name: str, task: str, reasoning: str = "") -> str:
     - sql: queries databases, finds data
     - translator: translates text between languages
     - coder: writes, explains, and debugs code
+    - reviewer: reviews code for bugs, security, performance (read-only)
+    - planner: breaks down complex tasks, builds execution plans
 
     Args:
         agent_name: Which agent to use (sql, translator, or coder).

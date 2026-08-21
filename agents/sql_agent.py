@@ -33,6 +33,7 @@ class SQLAgent(BaseAgent):
     You can delegate tasks to other agents:
     - delegate_task(agent_name="translator", task="...") for translations
     - delegate_task(agent_name="coder", task="...") for code tasks
+    - delegate_task(agent_name="reviewer", task="...") for code review
     
     Current date: {current_datetime}
     

@@ -1,4 +1,4 @@
-"""File tools — let agents read and write files in the workspace.
+"""File tools - let agents read and write files in the workspace.
 
 Split into read-only and write groups so agents can be given granular access.
 All paths are relative to WORKSPACE_DIR (defined in config.py).
@@ -84,12 +84,12 @@ def write_file(file_path: str, content: str, reasoning: str = "") -> str:
 # --- Tool group accessors ---
 
 def get_file_read_tools() -> list:
-    """Read-only file tools — safe to give any agent."""
+    """Read-only file tools - safe to give any agent."""
     return [read_file, list_files]
 
 
 def get_file_write_tools() -> list:
-    """Write-only file tools — only for agents that need disk access."""
+    """Write-only file tools - only for agents that need disk access."""
     return [write_file]
 
 

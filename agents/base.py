@@ -4,7 +4,7 @@ To create a new agent:
   1. Subclass BaseAgent
   2. Set AGENT_NAME, DESCRIPTION, and SYSTEM_PROMPT
   3. Override get_tools() to return the tools this agent can use
-  4. Drop the file in agents/ — auto-discovery handles the rest
+  4. Drop the file in agents/ - auto-discovery handles the rest
 """
 
 import json
@@ -19,17 +19,50 @@ from action_logger import log_query, log_tool_call, log_tool_result, log_respons
 MAX_ITERATIONS = 15
 
 
+# --- Tool severity map ---
+# Used by the frontend to show severity badges on each tool call.
+# low = read-only / safe, medium = modifies data, high = writes files / destructive.
+
+TOOL_SEVERITY = {
+    # -- Read (green) --
+    "read_file":         "low",
+    "list_files":        "low",
+    "search_knowledge":  "low",
+    "web_search":        "low",
+    "search_github":     "low",
+    "github_tree":       "low",
+    "github_file":       "low",
+    "list_tables":       "low",
+    "describe_table":    "low",
+    "delegate_task":     "medium",
+    # -- Modify (yellow) --
+    "save_knowledge":    "medium",
+    "execute_sql":       "medium",
+    # -- Write (red) --
+    "write_file":        "high",
+}
+
+
 # --- Tool usage guide ---
 # Appended to every agent's system prompt so they know the search priority
 # and auto-save useful findings to the knowledge base.
 
 TOOL_GUIDE = """
 TOOL USAGE PRIORITY:
-1. FIRST check the knowledge base (search_knowledge) — you may already know the answer from a previous session.
-2. THEN check local files (list_files, read_file) — the answer might be in the project.
+1. FIRST check the knowledge base (search_knowledge) - you may already know the answer from a previous session.
+2. THEN check local files (list_files, read_file) - the answer might be in the project.
 3. ONLY THEN search the internet (web_search) or GitHub (search_github, github_file) for external references.
-4. When you find useful code, patterns, or information — ALWAYS save it with save_knowledge so you remember it next time.
+4. When you find useful code, patterns, or information - ALWAYS save it with save_knowledge so you remember it next time.
    Use a clear topic (e.g. "python: flask routing", "sql: window functions") and include the source in the content.
+"""
+
+CONFIRMATION_GUIDE = """
+CONFIRMATION MODE IS ON:
+Before executing any write or modify operation (write_file, execute_sql with INSERT/UPDATE/DELETE),
+you MUST first describe exactly what you plan to change and ask for user confirmation.
+Format your request as: "I want to [describe action]. Shall I proceed?"
+Do NOT execute the operation until the user explicitly says "yes", "go ahead", "do it", or similar.
+If the user says "no" or "cancel", acknowledge and do not execute.
 """
 
 
@@ -41,8 +74,11 @@ class BaseAgent:
     DEFAULT_MODEL = "qwen2.5-coder:7b"
     DEFAULT_TEMPERATURE = 0.0
 
-    def __init__(self, include_internet: bool = True):
+    def __init__(self, include_internet: bool = True,
+                 confirmation_mode: bool = False):
         self.include_internet = include_internet
+        self.confirmation_mode = confirmation_mode
+        self.tool_events = []
 
     def get_tools(self) -> list:
         """Base tools for every agent: read-only files + knowledge base.
@@ -67,12 +103,19 @@ class BaseAgent:
     def get_tool_names(self, include_delegation: bool = True) -> set:
         return {t.name for t in self.get_all_tools(include_delegation)}
 
+    @staticmethod
+    def _tool_severity(tool_name: str) -> str:
+        """Return severity level for a tool: low / medium / high."""
+        return TOOL_SEVERITY.get(tool_name, "low")
+
     def create_history(self) -> list[BaseMessage]:
         prompt = self.SYSTEM_PROMPT.replace(
             "{current_datetime}",
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
         prompt += TOOL_GUIDE
+        if self.confirmation_mode:
+            prompt += CONFIRMATION_GUIDE
         return [SystemMessage(content=prompt)]
 
     def bind_tools(self, model: BaseChatModel, include_delegation: bool = True) -> BaseChatModel:
@@ -140,6 +183,7 @@ class BaseAgent:
         max_iterations: int = MAX_ITERATIONS,
         include_delegation: bool = True,
     ) -> str:
+        self.tool_events = []
         history.append(HumanMessage(content=query))
         log_panel(query, title=f"[{self.DISPLAY_NAME}] User Query")
         log_query(self.DISPLAY_NAME, query)
@@ -166,20 +210,37 @@ class BaseAgent:
                 return str(response.content)
 
             for tool_call in tool_calls:
+                severity = self._tool_severity(tool_call["name"])
+                args = tool_call.get("args", {})
+
                 log_panel(
-                    f"Tool: {tool_call['name']}\nArgs: {tool_call['args']}",
+                    f"Tool: {tool_call['name']}\nArgs: {args}",
                     title=f"[{self.DISPLAY_NAME}] Tool Call (iteration {iteration + 1})",
                 )
-                log_tool_call(self.DISPLAY_NAME, tool_call["name"], tool_call["args"])
+                log_tool_call(self.DISPLAY_NAME, tool_call["name"], args)
+
                 try:
                     tool_response = self._call_tool(tool_call, include_delegation)
-                    log_tool_result(self.DISPLAY_NAME, tool_call["name"], str(tool_response.content))
+                    result_text = str(tool_response.content)
+                    log_tool_result(self.DISPLAY_NAME, tool_call["name"], result_text)
                 except Exception as e:
                     log_error(self.DISPLAY_NAME, f"{tool_call['name']}: {e}")
+                    result_text = f"Error: {e}"
                     tool_response = ToolMessage(
-                        content=f"Error: {e}",
+                        content=result_text,
                         tool_call_id=tool_call["id"],
                     )
+
+                # -- Record this step for the frontend thought process --
+                self.tool_events.append({
+                    "tool": tool_call["name"],
+                    "args": {k: v for k, v in args.items()
+                             if k != "reasoning"},
+                    "reasoning": args.get("reasoning", ""),
+                    "result": result_text[:500],
+                    "severity": severity,
+                })
+
                 history.append(tool_response)
 
             iteration += 1

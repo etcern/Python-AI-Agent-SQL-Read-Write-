@@ -1,7 +1,7 @@
-"""Web search — let agents search the internet via DuckDuckGo.
+"""Web search - let agents search the internet via DuckDuckGo.
 
 Uses langchain_community's DuckDuckGoSearchRun under the hood.
-No API key needed — DuckDuckGo is free and anonymous.
+No API key needed - DuckDuckGo is free and anonymous.
 Ref: https://python.langchain.com/docs/integrations/tools/ddg/
 Ref: https://pypi.org/project/duckduckgo-search/
 """
@@ -46,5 +46,5 @@ def web_search(query: str, reasoning: str = "") -> str:
 # --- Accessor ---
 
 def get_web_tools() -> list:
-    """Web search tools — internet access via DuckDuckGo."""
+    """Web search tools - internet access via DuckDuckGo."""
     return [web_search]
