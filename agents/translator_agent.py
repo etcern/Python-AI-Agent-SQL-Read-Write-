@@ -9,7 +9,10 @@ from agents.base import BaseAgent
 
 class TranslatorAgent(BaseAgent):
     AGENT_NAME = "translator"
+    DISPLAY_NAME = "Translator Agent"
+    DEFAULT_MODEL = "qwen2.5:7b"
     DESCRIPTION = "Translates text between languages."
+    DEFAULT_TEMPERATURE = 0.0
 
     SYSTEM_PROMPT = """You are a professional translator. Translate text accurately while keeping the original meaning and tone.
 

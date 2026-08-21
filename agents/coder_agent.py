@@ -10,7 +10,10 @@ from tools.file_tools import get_file_tools
 
 class CoderAgent(BaseAgent):
     AGENT_NAME = "coder"
+    DISPLAY_NAME = "Coder Agent"
     DESCRIPTION = "Writes, explains, and debugs code."
+    DEFAULT_MODEL = "qwen2.5-coder:14b"
+    DEFAULT_TEMPERATURE = 0.0
 
     SYSTEM_PROMPT = """You are a senior software developer. You write clean, working code and explain things clearly.
 

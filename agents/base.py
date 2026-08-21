@@ -21,8 +21,11 @@ MAX_ITERATIONS = 15
 
 class BaseAgent:
     AGENT_NAME = "base"
-    SYSTEM_PROMPT = "You are a helpful assistant."
+    DISPLAY_NAME = "Base Agent"
     DESCRIPTION = "A generic assistant."
+    SYSTEM_PROMPT = "You are a helpful assistant."
+    DEFAULT_MODEL = "qwen2.5-coder:7b"
+    DEFAULT_TEMPERATURE = 0.0
 
     def get_tools(self) -> list:
         return []
@@ -110,8 +113,8 @@ class BaseAgent:
         include_delegation: bool = True,
     ) -> str:
         history.append(HumanMessage(content=query))
-        log_panel(query, title=f"[{self.AGENT_NAME}] User Query")
-        log_query(self.AGENT_NAME, query)
+        log_panel(query, title=f"[{self.DISPLAY_NAME}] User Query")
+        log_query(self.DISPLAY_NAME, query)
 
         iteration = 0
         while iteration < max_iterations:
@@ -130,21 +133,21 @@ class BaseAgent:
             history.append(response)
 
             if not tool_calls:
-                log_panel(str(response.content), title=f"[{self.AGENT_NAME}] Final Response")
-                log_response(self.AGENT_NAME, str(response.content))
+                log_panel(str(response.content), title=f"[{self.DISPLAY_NAME}] Final Response")
+                log_response(self.DISPLAY_NAME, str(response.content))
                 return str(response.content)
 
             for tool_call in tool_calls:
                 log_panel(
                     f"Tool: {tool_call['name']}\nArgs: {tool_call['args']}",
-                    title=f"[{self.AGENT_NAME}] Tool Call (iteration {iteration + 1})",
+                    title=f"[{self.DISPLAY_NAME}] Tool Call (iteration {iteration + 1})",
                 )
-                log_tool_call(self.AGENT_NAME, tool_call["name"], tool_call["args"])
+                log_tool_call(self.DISPLAY_NAME, tool_call["name"], tool_call["args"])
                 try:
                     tool_response = self._call_tool(tool_call, include_delegation)
-                    log_tool_result(self.AGENT_NAME, tool_call["name"], str(tool_response.content))
+                    log_tool_result(self.DISPLAY_NAME, tool_call["name"], str(tool_response.content))
                 except Exception as e:
-                    log_error(self.AGENT_NAME, f"{tool_call['name']}: {e}")
+                    log_error(self.DISPLAY_NAME, f"{tool_call['name']}: {e}")
                     tool_response = ToolMessage(
                         content=f"Error: {e}",
                         tool_call_id=tool_call["id"],
@@ -153,7 +156,7 @@ class BaseAgent:
 
             iteration += 1
 
-        log_error(self.AGENT_NAME, f"Exceeded max iterations ({max_iterations})")
+        log_error(self.DISPLAY_NAME, f"Exceeded max iterations ({max_iterations})")
         raise RuntimeError(
             f"Agent exceeded maximum iterations ({max_iterations})."
         )

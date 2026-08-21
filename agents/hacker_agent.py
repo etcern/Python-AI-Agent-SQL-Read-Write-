@@ -37,3 +37,5 @@ Respond in Markdown. Use tables for data dumps. Be concise."""
 
     def get_tools(self) -> list:
         return get_file_tools()
+#
+# Create me those files inside a folder called "Gatewayer". Apply security reasons for the antivirus and delegate to the other agents and test out the code before writing the final product. 
