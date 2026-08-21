@@ -25,8 +25,8 @@ This Project has been developed using the help of [ClaudeAI](https://claude.ai/)
 ---
 
 ## Features:
-- **Web Search** — All agents can search the internet via DuckDuckGo. No API key needed.<br>
-- **Wissensdatenbank (Knowledge Base)** — Agents can save and retrieve learned information across sessions, so they get smarter over time.<br>
-- **File Upload** — Upload files via the button or drag-and-drop them directly into the chat area. Agents can read and list uploaded files.<br>
-- **Modular Tools** — Each agent gets read-only file access, knowledge base, and web search by default. Add more tools (database, file write) per agent as needed.<br>
-- **Auto-Discovery** — Drop a new agent file in `agents/` and it just works. No manual registration.
+- **Web Search**: All agents can search the internet via DuckDuckGo. No API key needed.<br>
+- **Wissensdatenbank (Knowledge Base)**: Agents can save and retrieve learned information across sessions, so they get smarter over time.<br>
+- **File Upload**: Upload files via the button or drag-and-drop them directly into the chat area. Agents can read and list uploaded files.<br>
+- **Modular Tools**: Each agent gets read-only file access, knowledge base, and web search by default. Add more tools (database, file write) per agent as needed.<br>
+- **Auto-Discovery**: Drop a new agent file in `agents/` and it just works. No manual registration.
