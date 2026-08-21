@@ -924,6 +924,35 @@ body.sidebar-collapsed .hamburger {
 }
 
 
+/* --- Internet toggle button ---
+   Accent-colored when internet is ON, muted when OFF.
+   Ref: https://developer.mozilla.org/en-US/docs/Web/CSS/color-mix */
+
+.internet-toggle .material-symbols-rounded {
+    font-family: 'Material Symbols Rounded' !important;
+    transition: color 0.15s;
+}
+
+.internet-toggle.active {
+    color: var(--accent);
+}
+
+.internet-toggle.active:hover {
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    color: var(--accent);
+}
+
+/* -- Dim icon when internet is OFF -- */
+.internet-toggle:not(.active) {
+    color: var(--muted);
+    opacity: 0.5;
+}
+
+.internet-toggle:not(.active):hover {
+    opacity: 0.8;
+}
+
+
 /* --- Drag-and-drop overlay ---
    Shown over #main when files are dragged onto the window.
    Ref: https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API */

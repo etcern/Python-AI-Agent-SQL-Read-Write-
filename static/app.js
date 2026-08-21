@@ -21,6 +21,7 @@ let activeChatId = null;
 let chats = [];
 let agents = [];
 let renamingId = null;
+let internetEnabled = localStorage.getItem("qm_internet") !== "false";
 
 
 /* --- Settings (persisted to localStorage) ---
@@ -386,6 +387,7 @@ async function sendMessage() {
             body: JSON.stringify({
                 content: text,
                 context_window: settings.contextWindow,
+                internet_enabled: internetEnabled,
             }),
         });
 
@@ -488,6 +490,33 @@ document.getElementById("btn-settings").addEventListener("click", (e) => {
 
 /* -- Send button -- */
 document.getElementById("btn-send").addEventListener("click", sendMessage);
+
+
+/* --- Internet toggle ---
+   ON = agents get web_search + GitHub tools. OFF = local only.
+   Ref: https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage */
+
+const $internetBtn = document.getElementById("btn-internet");
+
+function updateInternetButton() {
+    const icon = $internetBtn.querySelector(".material-symbols-rounded");
+    if (internetEnabled) {
+        $internetBtn.classList.add("active");
+        $internetBtn.title = "Internet search enabled";
+        icon.textContent = "language";
+    } else {
+        $internetBtn.classList.remove("active");
+        $internetBtn.title = "Internet search disabled";
+        icon.textContent = "language";
+    }
+}
+
+$internetBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    internetEnabled = !internetEnabled;
+    localStorage.setItem("qm_internet", String(internetEnabled));
+    updateInternetButton();
+});
 
 
 /* --- Agent dropdown: populate + handle selection --- */
@@ -821,6 +850,7 @@ async function init() {
     applyTheme(s.theme);
     applyFont(s.font);
     initSettingsControls();
+    updateInternetButton();
 
     /* -- Collapse sidebar on mobile by default -- */
     if (window.innerWidth <= 768) {
