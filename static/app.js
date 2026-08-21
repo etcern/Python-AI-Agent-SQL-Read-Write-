@@ -761,6 +761,57 @@ async function deleteUpload(filename) {
 }
 
 
+/* --- Drag-and-drop file upload ---
+   Dragging files anywhere over #main shows an overlay.
+   Dropping uploads them via the existing /api/uploads endpoint.
+   Ref: https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API */
+
+const $main        = document.getElementById("main");
+const $dropOverlay = document.getElementById("drop-overlay");
+let dragCounter    = 0;
+
+/* -- Show overlay on drag enter -- */
+$main.addEventListener("dragenter", (e) => {
+    e.preventDefault();
+    dragCounter++;
+    $main.classList.add("drag-active");
+    $dropOverlay.classList.add("visible");
+});
+
+/* -- Keep overlay visible while dragging over -- */
+$main.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+});
+
+/* -- Hide overlay when drag leaves -- */
+$main.addEventListener("dragleave", (e) => {
+    e.preventDefault();
+    dragCounter--;
+    if (dragCounter <= 0) {
+        dragCounter = 0;
+        $main.classList.remove("drag-active");
+        $dropOverlay.classList.remove("visible");
+    }
+});
+
+/* -- Handle dropped files -- */
+$main.addEventListener("drop", async (e) => {
+    e.preventDefault();
+    dragCounter = 0;
+    $main.classList.remove("drag-active");
+    $dropOverlay.classList.remove("visible");
+
+    const files = e.dataTransfer.files;
+    if (!files.length) return;
+
+    for (const file of files) {
+        await uploadFile(file);
+    }
+    refreshFileList();
+});
+
+
 /* --- Init ---
    Load agents + chats from the API, apply saved settings, render. */
 

@@ -924,6 +924,48 @@ body.sidebar-collapsed .hamburger {
 }
 
 
+/* --- Drag-and-drop overlay ---
+   Shown over #main when files are dragged onto the window.
+   Ref: https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API */
+
+.drop-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.drop-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.drop-overlay .drop-icon {
+    font-size: 48px;
+    color: var(--accent);
+}
+
+.drop-overlay .drop-text {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--fg);
+}
+
+/* -- Dashed border highlight on main when dragging -- */
+#main.drag-active {
+    outline: 2px dashed var(--accent);
+    outline-offset: -4px;
+}
+
+
 /* --- Responsive ---
    On screens narrower than 768px, sidebar becomes an overlay.
    Ref: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_media_queries */
