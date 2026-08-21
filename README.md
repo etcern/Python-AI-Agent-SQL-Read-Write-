@@ -20,8 +20,8 @@ This Project has been developed using the help of [ClaudeAI](https://claude.ai/)
 ## To add a new agent:
   1. Create a new agent file under `agents/agent_name.py`
   2. Copy/Paste the current Arhitecture form an already existing agent.
-  3. Modify your `SYSTEM_PROMPT` to your liking
-  4. The agent gets auto-discovered - no need to register it anywhere
+  3. Modify your `SYSTEM_PROMPT` to your liking inside each Agent class
+  4. The agent gets auto-discovered
 
 ---
 
