@@ -2,6 +2,7 @@
 
 Split into read-only and write groups so agents can be given granular access.
 All paths are relative to WORKSPACE_DIR (defined in config.py).
+Supports PDF, DOCX, XLSX, CSV, images (OCR), JSON, and plain text.
 Ref: https://docs.python.org/3/library/os.path.html
 """
 
@@ -9,6 +10,7 @@ import os
 from langchain_core.tools import tool
 from logging_utils import log_panel
 from config import WORKSPACE_DIR
+from tools.extractors import extract_text
 
 
 # --- Read-only tools ---
@@ -16,6 +18,9 @@ from config import WORKSPACE_DIR
 @tool(parse_docstring=True)
 def read_file(file_path: str, reasoning: str = "") -> str:
     """Read the contents of a file.
+
+    Supports text files, PDF, DOCX, XLSX, CSV, JSON, and images (OCR).
+    Large files are automatically truncated.
 
     Args:
         file_path: Path to the file (relative to workspace folder).
@@ -29,8 +34,7 @@ def read_file(file_path: str, reasoning: str = "") -> str:
     full_path = os.path.join(WORKSPACE_DIR, file_path)
     if not os.path.exists(full_path):
         return f"File not found: {file_path}"
-    with open(full_path, "r", encoding="utf-8") as f:
-        content = f.read()
+    content = extract_text(full_path)
     log_panel(content[:500], title=f"read_file({file_path}) - Result")
     return content
 
