@@ -596,13 +596,43 @@ async function sendMessage(overrideText) {
     showLoading();
 
     const settings = loadSettings();
+
+    /* -- Sanitize content: strip invisible/control chars from copy-paste --
+       Strips: C0 control chars (except tab/newline/CR), DEL,
+       zero-width spaces, BOM, bidi overrides, word joiners */
+    let cleanContent = String(messageContent)
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
+        .replace(/[﻿​-‏‪-‮⁠⁦-⁩￾￿]/g, "")
+        .replace(/[\uD800-\uDFFF]/g, "");
+    if (!cleanContent.trim()) {
+        hideLoading();
+        return;
+    }
+
     const payload = {
-        content: messageContent,
+        content: cleanContent,
         context_window: Number.isFinite(settings.contextWindow) ? settings.contextWindow : DEFAULT_CTX,
         internet_enabled: !!internetEnabled,
         confirmation_mode: !!confirmationMode,
         thinking_enabled: !!thinkingEnabled,
     };
+
+    /* -- Safety: verify JSON roundtrip before sending -- */
+    try {
+        const testJson = JSON.stringify(payload);
+        const parsed = JSON.parse(testJson);
+        if (typeof parsed.content !== "string" || !parsed.content) {
+            console.warn("Payload content lost in JSON roundtrip:", messageContent);
+            hideLoading();
+            showToast("Message contains characters that cannot be sent. Try retyping it.", "warn");
+            return;
+        }
+    } catch (jsonErr) {
+        console.warn("JSON roundtrip failed:", jsonErr, messageContent);
+        hideLoading();
+        showToast("Message contains characters that cannot be sent. Try retyping it.", "warn");
+        return;
+    }
 
     try {
         const res = await fetch(`/api/chats/${activeChatId}/messages/stream`, {
@@ -804,6 +834,28 @@ async function sendMessage(overrideText) {
 $input.addEventListener("input", () => {
     $input.style.height = "auto";
     $input.style.height = Math.min($input.scrollHeight, 200) + "px";
+});
+
+/* -- Sanitize pasted text: strip invisible/control chars at paste time --
+   Catches problematic characters before they enter the textarea.
+   Ref: https://developer.mozilla.org/en-US/docs/Web/API/Element/paste_event */
+$input.addEventListener("paste", (e) => {
+    const raw = (e.clipboardData || window.clipboardData).getData("text");
+    if (!raw) return;
+    const clean = raw
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
+        .replace(/[﻿​-‏‪-‮⁠⁦-⁩￾￿]/g, "")
+        .replace(/[\uD800-\uDFFF]/g, "");
+    if (clean !== raw) {
+        e.preventDefault();
+        const ta = e.target;
+        const start = ta.selectionStart;
+        const end = ta.selectionEnd;
+        ta.value = ta.value.slice(0, start) + clean + ta.value.slice(end);
+        ta.selectionStart = ta.selectionEnd = start + clean.length;
+        ta.dispatchEvent(new Event("input", { bubbles: true }));
+        console.info("Paste sanitized: stripped", raw.length - clean.length, "invisible chars");
+    }
 });
 
 /* -- Submit on Enter, newline on Shift+Enter -- */

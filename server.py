@@ -89,6 +89,26 @@ class SendMessageBody(BaseModel):
     confirmation_mode: bool = False
     thinking_enabled: bool | None = None
 
+    @field_validator("content", mode="before")
+    @classmethod
+    def _fix_content(cls, v):
+        """Coerce content to string and strip invisible chars from copy-paste."""
+        import re
+        if v is None:
+            raise ValueError("Message content is required")
+        v = str(v)
+        # -- Strip C0 control chars (keep tab, newline, CR), DEL,
+        #    zero-width chars, BOM, bidi overrides, lone surrogates --
+        v = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", v)
+        v = re.sub(
+            r"[﻿​-‏‪-‮⁠⁦-⁩￾￿]",
+            "", v,
+        )
+        v = v.strip()
+        if not v:
+            raise ValueError("Message content cannot be empty")
+        return v
+
     @field_validator("context_window", mode="before")
     @classmethod
     def _fix_context_window(cls, v):
