@@ -36,10 +36,12 @@ let pendingAttachments = [];
    Ref: https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage */
 
 function loadSettings() {
+    let ctx = parseInt(localStorage.getItem("qm_ctx"), 10);
+    if (!ctx || isNaN(ctx) || ctx <= 0) ctx = DEFAULT_CTX;
     return {
         theme:         localStorage.getItem("qm_theme") || "codingstars-dark",
         font:          localStorage.getItem("qm_font")  || "Roboto",
-        contextWindow: parseInt(localStorage.getItem("qm_ctx") || DEFAULT_CTX, 10),
+        contextWindow: ctx,
     };
 }
 
@@ -596,10 +598,10 @@ async function sendMessage(overrideText) {
     const settings = loadSettings();
     const payload = {
         content: messageContent,
-        context_window: settings.contextWindow,
-        internet_enabled: internetEnabled,
-        confirmation_mode: confirmationMode,
-        thinking_enabled: thinkingEnabled,
+        context_window: Number.isFinite(settings.contextWindow) ? settings.contextWindow : DEFAULT_CTX,
+        internet_enabled: !!internetEnabled,
+        confirmation_mode: !!confirmationMode,
+        thinking_enabled: !!thinkingEnabled,
     };
 
     try {
@@ -610,7 +612,21 @@ async function sendMessage(overrideText) {
         });
 
         if (!res.ok) {
-            throw new Error(`HTTP ${res.status}`);
+            /* -- Read validation error details from response body -- */
+            let detail = `HTTP ${res.status}`;
+            try {
+                const errBody = await res.json();
+                if (errBody.detail) {
+                    if (Array.isArray(errBody.detail)) {
+                        detail = errBody.detail.map(e =>
+                            `${(e.loc || []).join(".")}: ${e.msg}`
+                        ).join("; ");
+                    } else {
+                        detail = String(errBody.detail);
+                    }
+                }
+            } catch (_) { /* no json body */ }
+            throw new Error(detail);
         }
 
         hideLoading();

@@ -13,9 +13,10 @@ import uuid
 from pathlib import PurePosixPath
 
 from fastapi import FastAPI, HTTPException, UploadFile, File
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from langchain_core.messages import AIMessage, HumanMessage
 
 from config import (
@@ -46,6 +47,25 @@ app = FastAPI(title="QueryMaster")
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
 
+# -- Log validation errors so 422s show up in the console --
+
+@app.exception_handler(RequestValidationError)
+async def _validation_error_handler(request, exc):
+    """Log Pydantic validation errors before returning 422."""
+    from logging_utils import log_panel
+    body = await request.body()
+    log_panel(
+        f"URL: {request.url}\n"
+        f"Body: {body.decode('utf-8', errors='replace')[:500]}\n"
+        f"Errors: {exc.errors()}",
+        title="422 Validation Error",
+    )
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()},
+    )
+
+
 # --- Request / response models ---
 # Ref: https://fastapi.tiangolo.com/tutorial/body/
 
@@ -62,10 +82,22 @@ class UpdateChatBody(BaseModel):
 
 class SendMessageBody(BaseModel):
     content: str
-    context_window: int = CONTEXT_WINDOW
+    context_window: int | None = CONTEXT_WINDOW
     internet_enabled: bool = True
     confirmation_mode: bool = False
     thinking_enabled: bool | None = None
+
+    @field_validator("context_window", mode="before")
+    @classmethod
+    def _fix_context_window(cls, v):
+        """Coerce null/invalid context_window to default (fixes NaN from JS)."""
+        if v is None:
+            return CONTEXT_WINDOW
+        try:
+            v = int(v)
+        except (TypeError, ValueError):
+            return CONTEXT_WINDOW
+        return v if v > 0 else CONTEXT_WINDOW
 
 
 # --- Helpers ---
