@@ -17,6 +17,7 @@ class ReviewerAgent(BaseAgent):
     DESCRIPTION = "Reviews code for bugs, security issues, and quality."
     DEFAULT_MODEL = "qwen2.5-coder:14b"
     DEFAULT_TEMPERATURE = 0.0
+    THINKING_DEFAULT = True
 
     SYSTEM_PROMPT = """You are a senior code reviewer. You check code for bugs, security vulnerabilities, performance issues, and readability.
 

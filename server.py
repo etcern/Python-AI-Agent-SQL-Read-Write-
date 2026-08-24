@@ -4,21 +4,24 @@ Ref: https://fastapi.tiangolo.com/
 Ref: https://fastapi.tiangolo.com/tutorial/static-files/
 """
 
+import json
 import os
 import sqlite3
+import tempfile
 import uuid
 
 from pathlib import PurePosixPath
 
 from fastapi import FastAPI, HTTPException, UploadFile, File
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from langchain_core.messages import AIMessage, HumanMessage
 
 from config import (
-    DB_PATH, CONTEXT_WINDOW, UPLOAD_DIR,
+    DB_PATH, CONTEXT_WINDOW, UPLOAD_DIR, PROFILES,
     ModelConfig, create_model, list_ollama_models,
+    detect_profile, get_system_info,
 )
 from agents import AGENTS
 from chat_store import (
@@ -57,6 +60,7 @@ class SendMessageBody(BaseModel):
     context_window: int = CONTEXT_WINDOW
     internet_enabled: bool = True
     confirmation_mode: bool = False
+    thinking_enabled: bool | None = None
 
 
 # --- Helpers ---
@@ -69,8 +73,10 @@ def _auto_title(text: str) -> str:
 
 def _rebuild_langchain_history(agent_name: str,
                                messages: list[dict],
+                               query: str = "",
                                include_internet: bool = True,
-                               confirmation_mode: bool = False) -> list:
+                               confirmation_mode: bool = False,
+                               thinking_enabled: bool | None = None) -> list:
     """Build a LangChain message list from stored messages.
 
     Starts with the agent's SystemMessage, then converts each stored
@@ -78,9 +84,12 @@ def _rebuild_langchain_history(agent_name: str,
     NOT included - agent.ask() appends it itself.
     Ref: https://python.langchain.com/docs/concepts/messages
     """
-    agent = AGENTS[agent_name](include_internet=include_internet,
-                               confirmation_mode=confirmation_mode)
-    history = agent.create_history()
+    agent = AGENTS[agent_name](
+        include_internet=include_internet,
+        confirmation_mode=confirmation_mode,
+        thinking_enabled=thinking_enabled,
+    )
+    history = agent.create_history(query=query)
     for msg in messages:
         if msg["role"] == "user":
             history.append(HumanMessage(content=msg["content"]))
@@ -203,8 +212,10 @@ def api_send_message(chat_id: str, body: SendMessageBody):
     history_msgs = all_msgs[:-1]
     lc_history = _rebuild_langchain_history(
         chat["agent"], history_msgs,
+        query=body.content,
         include_internet=body.internet_enabled,
         confirmation_mode=body.confirmation_mode,
+        thinking_enabled=body.thinking_enabled,
     )
 
     # -- Run the agent --
@@ -212,11 +223,19 @@ def api_send_message(chat_id: str, body: SendMessageBody):
         agent = AGENTS[chat["agent"]](
             include_internet=body.internet_enabled,
             confirmation_mode=body.confirmation_mode,
+            thinking_enabled=body.thinking_enabled,
         )
         temperature = AGENTS[chat["agent"]].DEFAULT_TEMPERATURE
 
+        # -- Set reasoning param based on thinking toggle --
+        reasoning = agent.thinking_enabled if agent.thinking_enabled else None
+
         model = create_model(
-            ModelConfig(name=chat["model"], temperature=temperature),
+            ModelConfig(
+                name=chat["model"],
+                temperature=temperature,
+                reasoning=reasoning,
+            ),
             num_ctx=body.context_window,
         )
         model_with_tools = agent.bind_tools(model)
@@ -224,6 +243,7 @@ def api_send_message(chat_id: str, body: SendMessageBody):
             query=body.content,
             history=lc_history,
             model=model_with_tools,
+            num_ctx=body.context_window,
         )
     except Exception as exc:
         response = f"Error: {exc}"
@@ -240,6 +260,86 @@ def api_send_message(chat_id: str, body: SendMessageBody):
         "tool_events": tool_events,
         "chat": get_chat(chat_id),
     }
+
+
+# --- API: Streaming messages (SSE) ---
+# Ref: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events
+
+@app.post("/api/chats/{chat_id}/messages/stream")
+def api_send_message_stream(chat_id: str, body: SendMessageBody):
+    """Stream agent response via Server-Sent Events.
+
+    Tool calls appear as events in real-time. The final answer
+    streams token by token. Saves to DB when complete.
+    """
+    chat = get_chat(chat_id)
+    if not chat:
+        raise HTTPException(404, "Chat not found")
+
+    # -- Persist user message --
+    add_message(chat_id, "user", body.content)
+
+    # -- Auto-title on first user message --
+    all_msgs = get_messages(chat_id)
+    user_msgs = [m for m in all_msgs if m["role"] == "user"]
+    if len(user_msgs) == 1:
+        update_chat(chat_id, title=_auto_title(body.content))
+
+    history_msgs = all_msgs[:-1]
+    lc_history = _rebuild_langchain_history(
+        chat["agent"], history_msgs,
+        query=body.content,
+        include_internet=body.internet_enabled,
+        confirmation_mode=body.confirmation_mode,
+        thinking_enabled=body.thinking_enabled,
+    )
+
+    agent = AGENTS[chat["agent"]](
+        include_internet=body.internet_enabled,
+        confirmation_mode=body.confirmation_mode,
+        thinking_enabled=body.thinking_enabled,
+    )
+    temperature = AGENTS[chat["agent"]].DEFAULT_TEMPERATURE
+    reasoning = agent.thinking_enabled if agent.thinking_enabled else None
+
+    model = create_model(
+        ModelConfig(
+            name=chat["model"],
+            temperature=temperature,
+            reasoning=reasoning,
+        ),
+        num_ctx=body.context_window,
+    )
+    model_with_tools = agent.bind_tools(model)
+
+    def event_generator():
+        try:
+            for event in agent.ask_stream(
+                query=body.content,
+                history=lc_history,
+                model=model_with_tools,
+                num_ctx=body.context_window,
+            ):
+                # -- Save to DB when done --
+                if event["type"] == "done":
+                    add_message(chat_id, "assistant", event["content"])
+                    event["chat"] = get_chat(chat_id)
+
+                yield f"data: {json.dumps(event)}\n\n"
+        except Exception as exc:
+            error_event = {"type": "error", "content": f"Error: {exc}"}
+            add_message(chat_id, "assistant", f"Error: {exc}")
+            yield f"data: {json.dumps(error_event)}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 # --- API: Agents ---
@@ -262,6 +362,7 @@ def api_list_agents():
             "tools": tools,
             "default_model": agent_cls.DEFAULT_MODEL,
             "temperature": agent_cls.DEFAULT_TEMPERATURE,
+            "thinking_default": agent_cls.THINKING_DEFAULT,
         })
     return result
 
@@ -280,6 +381,34 @@ def api_list_models():
 def api_db_info():
     """Table names + row counts from ecommerce.db."""
     return {"tables": _get_table_info()}
+
+
+# --- API: System info + profiles ---
+
+@app.get("/api/system-info")
+def api_system_info():
+    """System hardware info and detected resource profile."""
+    return get_system_info()
+
+
+@app.get("/api/profiles")
+def api_profiles():
+    """Available resource profiles with descriptions."""
+    return {
+        "profiles": {
+            k: {
+                "name": p.name,
+                "label": p.label,
+                "max_model_size": p.max_model_size,
+                "default_ctx": p.default_ctx,
+                "thinking_allowed": p.thinking_allowed,
+                "full_pipeline": p.full_pipeline,
+                "description": p.description,
+            }
+            for k, p in PROFILES.items()
+        },
+        "detected": detect_profile(),
+    }
 
 
 # --- API: File uploads ---
@@ -326,6 +455,50 @@ def api_delete_upload(filename: str):
         raise HTTPException(404, "File not found")
     os.remove(filepath)
     return {"ok": True}
+
+
+# --- API: Voice transcription ---
+# Ref: https://github.com/SYSTRAN/faster-whisper
+
+@app.post("/api/transcribe")
+async def api_transcribe(file: UploadFile = File(...)):
+    """Transcribe uploaded audio to text using faster-whisper.
+
+    Accepts wav, mp3, m4a, webm, ogg audio files.
+    Returns transcribed text, detected language, and duration.
+    Falls back with install instructions if faster-whisper isn't available.
+    """
+    from tools.voice import transcribe, voice_status
+
+    status = voice_status()
+    if not status["available"]:
+        return {
+            "text": "",
+            "error": "Server-side transcription not available. "
+                     "Install with: pip install faster-whisper",
+            "fallback": "browser",
+        }
+
+    # -- Save uploaded audio to temp file --
+    ext = os.path.splitext(file.filename or "audio.webm")[1]
+    with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
+        content = await file.read()
+        tmp.write(content)
+        tmp_path = tmp.name
+
+    try:
+        result = transcribe(tmp_path)
+    finally:
+        os.unlink(tmp_path)
+
+    return result
+
+
+@app.get("/api/voice-status")
+def api_voice_status():
+    """Check if server-side voice transcription is available."""
+    from tools.voice import voice_status
+    return voice_status()
 
 
 # --- API: Knowledge base (Wissensdatenbank) ---

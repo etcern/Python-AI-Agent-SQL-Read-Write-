@@ -25,6 +25,7 @@ class PlannerAgent(BaseAgent):
     DESCRIPTION = "Analyzes tasks, builds execution plans, delegates to other agents."
     DEFAULT_MODEL = "qwen2.5-coder:14b"
     DEFAULT_TEMPERATURE = 0.0
+    THINKING_DEFAULT = True
 
     SYSTEM_PROMPT = """You are a project planner and orchestrator. You break down complex tasks, delegate to the right agents, and deliver a polished result.
 
