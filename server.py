@@ -38,6 +38,7 @@ from tools.memory_profiler import (
     compare_snapshots, get_memory_summary, get_snapshot_history,
     get_snapshot_detail, check_memory_health, is_profiling,
 )
+from tools.delegation import set_delegation_context
 
 
 # --- App setup ---
@@ -277,6 +278,14 @@ def api_send_message(chat_id: str, body: SendMessageBody):
         # -- Set reasoning param based on thinking toggle --
         reasoning = agent.thinking_enabled if agent.thinking_enabled else None
 
+        # -- Pass context so delegated agents inherit model, internet, thinking --
+        set_delegation_context(
+            include_internet=body.internet_enabled,
+            thinking_enabled=thinking,
+            model_name=chat["model"],
+            num_ctx=body.context_window,
+        )
+
         model = create_model(
             ModelConfig(
                 name=chat["model"],
@@ -356,6 +365,14 @@ def api_send_message_stream(chat_id: str, body: SendMessageBody):
     )
     temperature = AGENTS[chat["agent"]].DEFAULT_TEMPERATURE
     reasoning = agent.thinking_enabled if agent.thinking_enabled else None
+
+    # -- Pass context so delegated agents inherit model, internet, thinking --
+    set_delegation_context(
+        include_internet=body.internet_enabled,
+        thinking_enabled=thinking,
+        model_name=chat["model"],
+        num_ctx=body.context_window,
+    )
 
     model = create_model(
         ModelConfig(

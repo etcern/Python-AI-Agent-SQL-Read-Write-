@@ -30,6 +30,7 @@ TOOL_SEVERITY = {
     "list_files":        "low",
     "search_knowledge":  "low",
     "web_search":        "low",
+    "web_read":          "low",
     "search_github":     "low",
     "github_tree":       "low",
     "github_file":       "low",
@@ -57,6 +58,16 @@ TOOL USAGE PRIORITY:
 3. ONLY THEN search the internet (web_search) or GitHub (search_github, github_file) for external references.
 4. When you find useful code, patterns, or information - ALWAYS save it with save_knowledge so you remember it next time.
    Use a clear topic (e.g. "python: flask routing", "sql: window functions") and include the source in the content.
+
+RESEARCH DEPTH:
+- Do NOT settle for one search. Do at least 2-3 searches with different angles/keywords to cover the topic properly.
+- After web_search, use web_read on the most relevant URLs to get the FULL content, not just snippets.
+- Extract real data, real examples, and real explanations from pages you read.
+- When creating documents or reports, fill them with actual researched content - not generic summaries.
+
+FILE OUTPUT:
+- When you create or write a file, ALWAYS tell the user the exact file path in your response.
+- Include the path from the tool result so the user can find the file on their system.
 """
 
 CONFIRMATION_GUIDE = """
@@ -139,7 +150,7 @@ class BaseAgent:
                 return ""
             lines = ["RELEVANT KNOWLEDGE FROM PREVIOUS SESSIONS:"]
             for r in results:
-                lines.append(f"- [{r['topic']}]: {r['content'][:200]}")
+                lines.append(f"- [{r['topic']}]: {r['content'][:500]}")
             return "\n".join(lines) + "\n"
         except Exception:
             return ""

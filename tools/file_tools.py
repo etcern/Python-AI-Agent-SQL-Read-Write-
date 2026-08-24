@@ -95,8 +95,9 @@ def write_file(file_path: str, content: str, reasoning: str = "") -> str:
     os.makedirs(os.path.dirname(full_path), exist_ok=True)
     with open(full_path, "w", encoding="utf-8") as f:
         f.write(content)
-    log_panel(f"Wrote {len(content)} characters", title=f"write_file({file_path}) - Result")
-    return f"File written: {file_path} ({len(content)} characters)"
+    abs_path = os.path.abspath(full_path)
+    log_panel(f"Wrote {len(content)} characters to {abs_path}", title=f"write_file({file_path}) - Result")
+    return f"File written: {file_path} ({len(content)} characters)\nSaved to: {abs_path}"
 
 
 @tool(parse_docstring=True)
@@ -190,12 +191,17 @@ def create_spreadsheet(file_path: str, data: str, reasoning: str = "") -> str:
     os.makedirs(os.path.dirname(full_path), exist_ok=True)
     wb.save(full_path)
 
+    abs_path = os.path.abspath(full_path)
     sheet_count = len(sheets)
     log_panel(
-        f"Created {file_path}: {sheet_count} sheet(s), {total_rows} rows",
+        f"Created {file_path}: {sheet_count} sheet(s), {total_rows} rows at {abs_path}",
         title=f"create_spreadsheet({file_path}) - Result",
     )
-    return f"Spreadsheet created: {file_path} ({sheet_count} sheet(s), {total_rows} rows)"
+    return (
+        f"Spreadsheet created: {file_path} ({sheet_count} sheet(s), {total_rows} rows)\n"
+        f"Saved to: {abs_path}\n"
+        f"IMPORTANT: Tell the user the exact file path so they can find it."
+    )
 
 
 # --- Tool group accessors ---
