@@ -96,11 +96,17 @@
                         <span class="material-symbols-rounded">attach_file</span>
                         <span id="upload-badge" class="upload-badge hidden">0</span>
                     </button>
+                    <button id="btn-mic" class="icon-btn mic-toggle" title="Voice input">
+                        <span class="material-symbols-rounded">mic</span>
+                    </button>
                     <button id="btn-internet" class="icon-btn internet-toggle active" title="Internet search enabled">
                         <span class="material-symbols-rounded">language</span>
                     </button>
                     <button id="btn-confirm" class="icon-btn confirm-toggle" title="Confirmation mode off">
                         <span class="material-symbols-rounded">shield</span>
+                    </button>
+                    <button id="btn-thinking" class="icon-btn thinking-toggle" title="Thinking mode off">
+                        <span class="material-symbols-rounded">psychology</span>
                     </button>
                     <button id="btn-agent" class="pill-btn" title="Switch agent">
                         <span class="material-symbols-rounded">smart_toy</span>
@@ -166,6 +172,15 @@
         <option value="16384">16 384 tokens</option>
         <option value="32768">32 768 tokens</option>
     </select>
+
+    <div class="dropdown-header">Performance Profile</div>
+    <select id="profile-select">
+        <option value="auto">Auto-detect</option>
+        <option value="lite">Lite (low-spec)</option>
+        <option value="standard">Standard</option>
+        <option value="full">Full (powerful)</option>
+    </select>
+    <div id="profile-info" class="muted-text" style="padding: 2px 4px; font-size: 11px;"></div>
 
     <hr class="dropdown-divider">
     <div class="dropdown-header">Showcase</div>

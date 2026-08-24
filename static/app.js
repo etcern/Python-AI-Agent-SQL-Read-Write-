@@ -23,6 +23,10 @@ let agents = [];
 let renamingId = null;
 let internetEnabled = localStorage.getItem("qm_internet") !== "false";
 let confirmationMode = localStorage.getItem("qm_confirm") === "true";
+let thinkingEnabled = localStorage.getItem("qm_thinking") === "true";
+let activeProfile = localStorage.getItem("qm_profile") || "auto";
+let isRecording = false;
+let speechRecognition = null;
 
 
 /* --- Settings (persisted to localStorage) ---
@@ -359,32 +363,47 @@ function renderThoughtProcess(toolEvents) {
     const badges = { low: "\u{1F7E2}", medium: "\u{1F7E1}", high: "\u{1F534}" };
 
     for (const evt of toolEvents) {
+        const isThinking = evt.tool === "_thinking";
         const step = document.createElement("div");
-        step.className = `thought-step severity-${evt.severity || "low"}`;
+        step.className = isThinking
+            ? "thought-step thinking-step"
+            : `thought-step severity-${evt.severity || "low"}`;
 
-        const badge = badges[evt.severity] || badges.low;
-        const argsStr = Object.entries(evt.args || {})
-            .map(([k, v]) => {
-                const val = typeof v === "string" && v.length > 60
-                    ? v.slice(0, 60) + "..." : v;
-                return `${k}: ${val}`;
-            })
-            .join(", ");
+        if (isThinking) {
+            /* -- Thinking step: show reasoning content with brain icon -- */
+            let html = `<div class="step-header">
+                <span class="severity-badge">\u{1F9E0}</span>
+                <span class="step-tool">Thinking</span>
+            </div>`;
+            if (evt.reasoning) {
+                html += `<div class="step-reasoning" style="font-style:normal">${escapeHtml(evt.reasoning.slice(0, 500))}</div>`;
+            }
+            step.innerHTML = html;
+        } else {
+            const badge = badges[evt.severity] || badges.low;
+            const argsStr = Object.entries(evt.args || {})
+                .map(([k, v]) => {
+                    const val = typeof v === "string" && v.length > 60
+                        ? v.slice(0, 60) + "..." : v;
+                    return `${k}: ${val}`;
+                })
+                .join(", ");
 
-        let html = `<div class="step-header">
-            <span class="severity-badge">${badge}</span>
-            <span class="step-tool">${escapeHtml(evt.tool)}</span>
-            <span class="step-args">${escapeHtml(argsStr)}</span>
-        </div>`;
+            let html = `<div class="step-header">
+                <span class="severity-badge">${badge}</span>
+                <span class="step-tool">${escapeHtml(evt.tool)}</span>
+                <span class="step-args">${escapeHtml(argsStr)}</span>
+            </div>`;
 
-        if (evt.reasoning) {
-            html += `<div class="step-reasoning">${escapeHtml(evt.reasoning)}</div>`;
+            if (evt.reasoning) {
+                html += `<div class="step-reasoning">${escapeHtml(evt.reasoning)}</div>`;
+            }
+            if (evt.result) {
+                html += `<div class="step-result">${escapeHtml(evt.result.slice(0, 300))}</div>`;
+            }
+            step.innerHTML = html;
         }
-        if (evt.result) {
-            html += `<div class="step-result">${escapeHtml(evt.result.slice(0, 300))}</div>`;
-        }
 
-        step.innerHTML = html;
         steps.appendChild(step);
     }
 
@@ -473,7 +492,11 @@ function hideLoading() {
 }
 
 
-/* --- Send message --- */
+/* --- Send message (streaming via SSE) ---
+   Sends to the streaming endpoint. Tool events appear in real-time,
+   final answer streams token by token.
+   Ref: https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
+   Ref: https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream */
 
 async function sendMessage() {
     const text = $input.value.trim();
@@ -490,30 +513,172 @@ async function sendMessage() {
     /* -- Show typing indicator -- */
     showLoading();
 
+    const settings = loadSettings();
+    const payload = {
+        content: text,
+        context_window: settings.contextWindow,
+        internet_enabled: internetEnabled,
+        confirmation_mode: confirmationMode,
+        thinking_enabled: thinkingEnabled,
+    };
+
     try {
-        const settings = loadSettings();
-        const data = await api(`/chats/${activeChatId}/messages`, {
+        const res = await fetch(`/api/chats/${activeChatId}/messages/stream`, {
             method: "POST",
-            body: JSON.stringify({
-                content: text,
-                context_window: settings.contextWindow,
-                internet_enabled: internetEnabled,
-                confirmation_mode: confirmationMode,
-            }),
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
         });
 
-        hideLoading();
-        appendMessage("assistant", data.content, data.tool_events || []);
-        scrollToBottom();
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+        }
 
-        /* -- Update chat title in sidebar if it changed -- */
-        if (data.chat) {
-            const chat = chats.find(c => c.id === activeChatId);
-            if (chat && chat.title !== data.chat.title) {
-                chat.title = data.chat.title;
-                renderChatList();
+        hideLoading();
+
+        /* -- Create the assistant message bubble for streaming -- */
+        const row = document.createElement("div");
+        row.className = "msg assistant";
+
+        const avatar = document.createElement("div");
+        avatar.className = "msg-avatar";
+        const icon = document.createElement("span");
+        icon.className = "material-symbols-rounded";
+        icon.textContent = "smart_toy";
+        avatar.appendChild(icon);
+
+        const body = document.createElement("div");
+        body.className = "msg-content";
+
+        const contentDiv = document.createElement("div");
+        contentDiv.className = "streaming-content";
+
+        const cursor = document.createElement("span");
+        cursor.className = "streaming-cursor";
+
+        body.appendChild(contentDiv);
+        row.appendChild(avatar);
+        row.appendChild(body);
+        $messages.appendChild(row);
+
+        /* -- Read the SSE stream -- */
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let fullContent = "";
+        let toolEvents = [];
+        let buffer = "";
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop(); // keep incomplete line
+
+            for (const line of lines) {
+                if (!line.startsWith("data: ")) continue;
+                const jsonStr = line.slice(6);
+                if (!jsonStr.trim()) continue;
+
+                let event;
+                try { event = JSON.parse(jsonStr); }
+                catch { continue; }
+
+                switch (event.type) {
+                    case "thinking":
+                        toolEvents.push({
+                            tool: "_thinking",
+                            args: {},
+                            reasoning: event.content || "",
+                            result: "",
+                            severity: "low",
+                        });
+                        break;
+
+                    case "tool":
+                        toolEvents.push({
+                            tool: event.tool,
+                            args: event.args || {},
+                            reasoning: event.reasoning || "",
+                            result: "running...",
+                            severity: event.severity || "low",
+                        });
+                        /* -- Show tool activity indicator -- */
+                        contentDiv.innerHTML = `<span style="color:var(--muted);font-size:13px">Using ${escapeHtml(event.tool)}...</span>`;
+                        cursor.remove();
+                        contentDiv.appendChild(cursor);
+                        scrollToBottom();
+                        break;
+
+                    case "tool_result":
+                        /* -- Update last tool event with result -- */
+                        for (let i = toolEvents.length - 1; i >= 0; i--) {
+                            if (toolEvents[i].tool === event.tool) {
+                                toolEvents[i].result = event.result || "";
+                                break;
+                            }
+                        }
+                        break;
+
+                    case "token":
+                        fullContent += event.content;
+                        contentDiv.innerHTML = renderMarkdown(fullContent);
+                        cursor.remove();
+                        contentDiv.appendChild(cursor);
+                        scrollToBottom();
+                        break;
+
+                    case "done":
+                        fullContent = event.content || fullContent;
+                        toolEvents = event.tool_events || toolEvents;
+
+                        /* -- Final render with thought process + copy buttons -- */
+                        cursor.remove();
+                        body.innerHTML = "";
+
+                        if (toolEvents.length > 0) {
+                            body.appendChild(renderThoughtProcess(toolEvents));
+                        }
+
+                        const finalDiv = document.createElement("div");
+                        finalDiv.innerHTML = renderMarkdown(fullContent);
+                        body.appendChild(finalDiv);
+                        addCopyButtons(finalDiv);
+
+                        /* -- Update chat title -- */
+                        if (event.chat) {
+                            const chat = chats.find(c => c.id === activeChatId);
+                            if (chat && chat.title !== event.chat.title) {
+                                chat.title = event.chat.title;
+                                renderChatList();
+                            }
+                        }
+                        scrollToBottom();
+                        break;
+
+                    case "error":
+                        cursor.remove();
+                        contentDiv.innerHTML = "";
+                        const errDiv = document.createElement("div");
+                        errDiv.className = "msg-error";
+                        errDiv.textContent = event.content || "Unknown error";
+                        body.innerHTML = "";
+                        body.appendChild(errDiv);
+                        scrollToBottom();
+                        break;
+                }
             }
         }
+
+        /* -- If stream ended without a done event, finalize -- */
+        if (fullContent && !contentDiv.querySelector(".streaming-cursor")) {
+            /* Already finalized by done event */
+        } else if (fullContent) {
+            cursor.remove();
+            contentDiv.innerHTML = renderMarkdown(fullContent);
+            addCopyButtons(contentDiv);
+        }
+
     } catch (e) {
         hideLoading();
         appendMessage("assistant", `Error: ${e.message}`);
@@ -651,6 +816,167 @@ $confirmBtn.addEventListener("click", (e) => {
     confirmationMode = !confirmationMode;
     localStorage.setItem("qm_confirm", String(confirmationMode));
     updateConfirmButton();
+});
+
+
+/* --- Thinking toggle ---
+   ON = agents use chain-of-thought reasoning. OFF = fast direct answers.
+   Per-agent default can be overridden by this toggle.
+   Ref: https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage */
+
+const $thinkingBtn = document.getElementById("btn-thinking");
+
+function updateThinkingButton() {
+    if (thinkingEnabled) {
+        $thinkingBtn.classList.add("active");
+        $thinkingBtn.title = "Thinking mode on - agent reasons step by step";
+    } else {
+        $thinkingBtn.classList.remove("active");
+        $thinkingBtn.title = "Thinking mode off";
+    }
+}
+
+$thinkingBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    thinkingEnabled = !thinkingEnabled;
+    localStorage.setItem("qm_thinking", String(thinkingEnabled));
+    updateThinkingButton();
+});
+
+/* -- Update thinking toggle when agent changes (respect agent defaults) -- */
+function syncThinkingWithAgent() {
+    const chat = chats.find(c => c.id === activeChatId);
+    if (!chat) return;
+    const agent = agents.find(a => a.key === chat.agent);
+    if (agent && agent.thinking_default !== undefined) {
+        /* -- Only auto-set if user hasn't explicitly toggled -- */
+        const userOverride = localStorage.getItem("qm_thinking_override");
+        if (userOverride !== "true") {
+            thinkingEnabled = agent.thinking_default;
+            localStorage.setItem("qm_thinking", String(thinkingEnabled));
+            updateThinkingButton();
+        }
+    }
+}
+
+
+/* --- Voice input (Web Speech API) ---
+   Uses the browser's built-in speech recognition (Chrome/Edge).
+   Transcribed text is inserted into the input field.
+   Ref: https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition */
+
+const $micBtn = document.getElementById("btn-mic");
+
+function initVoiceInput() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        $micBtn.style.display = "none";
+        return;
+    }
+
+    speechRecognition = new SpeechRecognition();
+    speechRecognition.continuous = false;
+    speechRecognition.interimResults = true;
+    speechRecognition.lang = "en-US";
+
+    let finalTranscript = "";
+
+    speechRecognition.onstart = () => {
+        isRecording = true;
+        $micBtn.classList.add("recording");
+        $micBtn.title = "Listening... (click to stop)";
+    };
+
+    speechRecognition.onresult = (event) => {
+        let interim = "";
+        finalTranscript = "";
+        for (let i = 0; i < event.results.length; i++) {
+            if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript;
+            } else {
+                interim += event.results[i][0].transcript;
+            }
+        }
+        /* -- Show interim results in the input field -- */
+        $input.value = finalTranscript + interim;
+        $input.style.height = "auto";
+        $input.style.height = Math.min($input.scrollHeight, 200) + "px";
+    };
+
+    speechRecognition.onend = () => {
+        isRecording = false;
+        $micBtn.classList.remove("recording");
+        $micBtn.title = "Voice input";
+        /* -- If we got a final transcript, keep it in the input -- */
+        if (finalTranscript.trim()) {
+            $input.value = finalTranscript.trim();
+            $input.focus();
+        }
+    };
+
+    speechRecognition.onerror = (event) => {
+        isRecording = false;
+        $micBtn.classList.remove("recording");
+        $micBtn.title = "Voice input";
+        if (event.error !== "no-speech" && event.error !== "aborted") {
+            console.error("Speech recognition error:", event.error);
+        }
+    };
+}
+
+$micBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (!speechRecognition) return;
+
+    if (isRecording) {
+        speechRecognition.stop();
+    } else {
+        try {
+            speechRecognition.start();
+        } catch (err) {
+            console.error("Mic start error:", err);
+        }
+    }
+});
+
+
+/* --- Profile selector --- */
+
+const $profileSelect = document.getElementById("profile-select");
+const $profileInfo = document.getElementById("profile-info");
+
+function initProfileSelector() {
+    $profileSelect.value = activeProfile;
+
+    /* -- Fetch system info to show detected profile -- */
+    api("/system-info").then(info => {
+        if (activeProfile === "auto") {
+            $profileInfo.textContent = `Detected: ${info.detected_profile} (${info.ram_gb || "?"}GB RAM, ${info.cpu_cores || "?"}cores)`;
+        }
+    }).catch(() => {});
+}
+
+$profileSelect.addEventListener("change", () => {
+    activeProfile = $profileSelect.value;
+    localStorage.setItem("qm_profile", activeProfile);
+
+    /* -- Auto-adjust context window based on profile -- */
+    if (activeProfile === "lite") {
+        $ctxSelect.value = "2048";
+    } else if (activeProfile === "standard") {
+        $ctxSelect.value = "4096";
+    } else if (activeProfile === "full") {
+        $ctxSelect.value = "8192";
+    }
+    const s = loadSettings();
+    s.contextWindow = parseInt($ctxSelect.value, 10);
+    saveSettings(s);
+
+    /* -- Update profile info -- */
+    api("/profiles").then(data => {
+        const p = data.profiles[activeProfile] || data.profiles[data.detected];
+        if (p) $profileInfo.textContent = p.description;
+    }).catch(() => {});
 });
 
 
@@ -987,6 +1313,9 @@ async function init() {
     initSettingsControls();
     updateInternetButton();
     updateConfirmButton();
+    updateThinkingButton();
+    initVoiceInput();
+    initProfileSelector();
 
     /* -- Collapse sidebar on mobile by default -- */
     if (window.innerWidth <= 768) {

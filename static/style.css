@@ -1140,6 +1140,97 @@ body.sidebar-collapsed .hamburger {
 }
 
 
+/* --- Thinking toggle button ---
+   Purple when thinking is ON, muted when OFF. */
+
+.thinking-toggle .material-symbols-rounded {
+    font-family: 'Material Symbols Rounded' !important;
+    transition: color 0.15s;
+}
+
+.thinking-toggle.active {
+    color: #a78bfa;
+}
+
+.thinking-toggle.active:hover {
+    background: rgba(167, 139, 250, 0.15);
+    color: #a78bfa;
+}
+
+.thinking-toggle:not(.active) {
+    color: var(--muted);
+    opacity: 0.5;
+}
+
+.thinking-toggle:not(.active):hover {
+    opacity: 0.8;
+}
+
+
+/* --- Mic toggle button ---
+   Green when recording, muted when idle. */
+
+.mic-toggle .material-symbols-rounded {
+    font-family: 'Material Symbols Rounded' !important;
+    transition: color 0.15s;
+}
+
+.mic-toggle.recording {
+    color: #ef4444;
+    animation: mic-pulse 1s infinite;
+}
+
+.mic-toggle.recording:hover {
+    background: rgba(239, 68, 68, 0.15);
+}
+
+.mic-toggle:not(.recording) {
+    color: var(--muted);
+    opacity: 0.7;
+}
+
+.mic-toggle:not(.recording):hover {
+    opacity: 1;
+    color: var(--fg);
+}
+
+@keyframes mic-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+
+/* --- Streaming cursor ---
+   Blinking cursor at the end of the streaming message. */
+
+.streaming-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background: var(--accent);
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: cursor-blink 0.7s infinite;
+}
+
+@keyframes cursor-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+
+/* --- Thinking content in thought process panel --- */
+
+.thought-step.thinking-step {
+    border-left-color: #a78bfa;
+    background: rgba(167, 139, 250, 0.05);
+}
+
+.thought-step.thinking-step .step-tool {
+    color: #a78bfa;
+}
+
+
 /* --- Internet toggle button ---
    Accent-colored when internet is ON, muted when OFF.
    Ref: https://developer.mozilla.org/en-US/docs/Web/CSS/color-mix */
