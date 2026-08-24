@@ -27,6 +27,8 @@ let thinkingEnabled = localStorage.getItem("qm_thinking") === "true";
 let activeProfile = localStorage.getItem("qm_profile") || "auto";
 let isRecording = false;
 let speechRecognition = null;
+let lastSentMessage = "";
+let modelThinkingSupport = {};
 
 
 /* --- Settings (persisted to localStorage) ---
@@ -318,10 +320,7 @@ function appendMessage(role, content, toolEvents = []) {
         }
 
         if (content.startsWith("Error:")) {
-            const errDiv = document.createElement("div");
-            errDiv.className = "msg-error";
-            errDiv.textContent = content;
-            body.appendChild(errDiv);
+            body.appendChild(buildErrorWithRetry(content));
         } else {
             const contentDiv = document.createElement("div");
             contentDiv.innerHTML = renderMarkdown(content);
@@ -462,6 +461,55 @@ function scrollToBottom() {
 }
 
 
+/* --- Error with regenerate button --- */
+
+function buildErrorWithRetry(message) {
+    const wrapper = document.createElement("div");
+
+    const errDiv = document.createElement("div");
+    errDiv.className = "msg-error";
+    errDiv.textContent = message;
+
+    const retryBtn = document.createElement("button");
+    retryBtn.className = "regenerate-btn";
+    retryBtn.innerHTML = '<span class="material-symbols-rounded">refresh</span> Retry';
+    retryBtn.addEventListener("click", () => {
+        /* -- Remove this error message row -- */
+        const msgRow = wrapper.closest(".msg");
+        if (msgRow) msgRow.remove();
+        /* -- Re-send the last message -- */
+        if (lastSentMessage) {
+            sendMessage(lastSentMessage);
+        }
+    });
+
+    wrapper.appendChild(errDiv);
+    wrapper.appendChild(retryBtn);
+    return wrapper;
+}
+
+
+/* --- Toast notification --- */
+
+function showToast(message, type = "") {
+    let toast = document.getElementById("toast-notification");
+    if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "toast-notification";
+        toast.className = "toast";
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.className = "toast" + (type ? ` ${type}` : "");
+    requestAnimationFrame(() => {
+        toast.classList.add("visible");
+    });
+    setTimeout(() => {
+        toast.classList.remove("visible");
+    }, 4000);
+}
+
+
 /* --- Loading indicator --- */
 
 function showLoading() {
@@ -498,16 +546,23 @@ function hideLoading() {
    Ref: https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
    Ref: https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream */
 
-async function sendMessage() {
-    const text = $input.value.trim();
+async function sendMessage(overrideText) {
+    const text = overrideText || $input.value.trim();
     if (!text || !activeChatId) return;
 
-    /* -- Clear input and reset height -- */
-    $input.value = "";
-    $input.style.height = "auto";
+    /* -- Store for retry -- */
+    lastSentMessage = text;
 
-    /* -- Show user message immediately -- */
-    appendMessage("user", text);
+    /* -- Clear input and reset height -- */
+    if (!overrideText) {
+        $input.value = "";
+        $input.style.height = "auto";
+    }
+
+    /* -- Show user message immediately (skip if retrying) -- */
+    if (!overrideText) {
+        appendMessage("user", text);
+    }
     scrollToBottom();
 
     /* -- Show typing indicator -- */
@@ -585,6 +640,10 @@ async function sendMessage() {
                 catch { continue; }
 
                 switch (event.type) {
+                    case "thinking_blocked":
+                        showToast(`Thinking disabled - ${event.model} does not support it`, "warn");
+                        break;
+
                     case "thinking":
                         toolEvents.push({
                             tool: "_thinking",
@@ -659,11 +718,8 @@ async function sendMessage() {
                     case "error":
                         cursor.remove();
                         contentDiv.innerHTML = "";
-                        const errDiv = document.createElement("div");
-                        errDiv.className = "msg-error";
-                        errDiv.textContent = event.content || "Unknown error";
                         body.innerHTML = "";
-                        body.appendChild(errDiv);
+                        body.appendChild(buildErrorWithRetry(event.content || "Unknown error"));
                         scrollToBottom();
                         break;
                 }
@@ -681,7 +737,21 @@ async function sendMessage() {
 
     } catch (e) {
         hideLoading();
-        appendMessage("assistant", `Error: ${e.message}`);
+        /* -- Build error with retry button -- */
+        const row = document.createElement("div");
+        row.className = "msg assistant";
+        const avatar = document.createElement("div");
+        avatar.className = "msg-avatar";
+        const ic = document.createElement("span");
+        ic.className = "material-symbols-rounded";
+        ic.textContent = "smart_toy";
+        avatar.appendChild(ic);
+        const errBody = document.createElement("div");
+        errBody.className = "msg-content";
+        errBody.appendChild(buildErrorWithRetry(`Error: ${e.message}`));
+        row.appendChild(avatar);
+        row.appendChild(errBody);
+        $messages.appendChild(row);
         scrollToBottom();
     }
 }
@@ -838,6 +908,11 @@ function updateThinkingButton() {
 
 $thinkingBtn.addEventListener("click", (e) => {
     e.stopPropagation();
+    /* -- Block toggle if model doesn't support thinking -- */
+    if ($thinkingBtn.classList.contains("disabled")) {
+        showToast("Current model does not support thinking mode", "warn");
+        return;
+    }
     thinkingEnabled = !thinkingEnabled;
     localStorage.setItem("qm_thinking", String(thinkingEnabled));
     updateThinkingButton();
@@ -871,13 +946,14 @@ function initVoiceInput() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
         $micBtn.style.display = "none";
+        $micBtn.title = "Voice input not supported in this browser";
         return;
     }
 
     speechRecognition = new SpeechRecognition();
     speechRecognition.continuous = false;
     speechRecognition.interimResults = true;
-    speechRecognition.lang = "en-US";
+    speechRecognition.lang = navigator.language || "en-US";
 
     let finalTranscript = "";
 
@@ -918,15 +994,28 @@ function initVoiceInput() {
         isRecording = false;
         $micBtn.classList.remove("recording");
         $micBtn.title = "Voice input";
-        if (event.error !== "no-speech" && event.error !== "aborted") {
-            console.error("Speech recognition error:", event.error);
+        const errMap = {
+            "not-allowed": "Microphone access denied. Allow it in browser settings.",
+            "no-speech": "",
+            "aborted": "",
+            "network": "Network error. Speech recognition needs an internet connection.",
+            "service-not-allowed": "Speech service not available. Try Chrome or Edge.",
+        };
+        const msg = errMap[event.error];
+        if (msg === undefined) {
+            showToast(`Mic error: ${event.error}`, "warn");
+        } else if (msg) {
+            showToast(msg, "warn");
         }
     };
 }
 
 $micBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    if (!speechRecognition) return;
+    if (!speechRecognition) {
+        showToast("Voice input not supported. Use Chrome or Edge.", "warn");
+        return;
+    }
 
     if (isRecording) {
         speechRecognition.stop();
@@ -934,7 +1023,7 @@ $micBtn.addEventListener("click", (e) => {
         try {
             speechRecognition.start();
         } catch (err) {
-            console.error("Mic start error:", err);
+            showToast(`Mic error: ${err.message}`, "warn");
         }
     }
 });
@@ -1000,17 +1089,20 @@ async function populateAgentDropdown() {
         $agentList.appendChild(btn);
     }
 
-    /* -- Model select -- */
+    /* -- Model select (with thinking support info) -- */
     try {
         const data = await api("/models");
         $modelSelect.innerHTML = "";
+        modelThinkingSupport = {};
         for (const m of data.models) {
+            modelThinkingSupport[m.name] = m.thinks;
             const opt = document.createElement("option");
-            opt.value = m;
-            opt.textContent = m;
-            if (m === chat.model) opt.selected = true;
+            opt.value = m.name;
+            opt.textContent = m.name + (m.thinks ? " \u{1F9E0}" : "");
+            if (m.name === chat.model) opt.selected = true;
             $modelSelect.appendChild(opt);
         }
+        updateThinkingAvailability(chat.model);
     } catch {
         $modelSelect.innerHTML = `<option>${chat.model} (Ollama unreachable)</option>`;
     }
@@ -1045,10 +1137,33 @@ $modelSelect.addEventListener("change", async () => {
         });
         const chat = chats.find(c => c.id === activeChatId);
         if (chat) chat.model = updated.model;
+        updateThinkingAvailability($modelSelect.value);
     } catch (e) {
         console.error("Model change failed:", e);
     }
 });
+
+
+/* --- Thinking availability based on model ---
+   Disables the thinking toggle when the current model doesn't support it. */
+
+function updateThinkingAvailability(modelName) {
+    const canThink = modelThinkingSupport[modelName] === true;
+    if (canThink) {
+        $thinkingBtn.classList.remove("disabled");
+        $thinkingBtn.title = thinkingEnabled
+            ? "Thinking mode on" : "Thinking mode off";
+    } else {
+        $thinkingBtn.classList.add("disabled");
+        $thinkingBtn.title = "Model does not support thinking";
+        /* -- Auto-disable thinking for this model -- */
+        if (thinkingEnabled) {
+            thinkingEnabled = false;
+            localStorage.setItem("qm_thinking", "false");
+            updateThinkingButton();
+        }
+    }
+}
 
 
 /* --- Settings dropdown --- */

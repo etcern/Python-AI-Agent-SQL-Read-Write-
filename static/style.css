@@ -615,12 +615,11 @@ body.sidebar-collapsed .hamburger {
 
 #composer-inner {
     display: flex;
-    align-items: flex-end;
-    gap: 4px;
-    border-radius: 24px;
+    flex-direction: column;
+    border-radius: 18px;
     background: var(--input-bg);
     border: 1px solid var(--border);
-    padding: 6px 8px 6px 18px;
+    padding: 10px 14px 6px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
     transition: border-color 0.15s, box-shadow 0.15s;
 }
@@ -643,18 +642,18 @@ body.sidebar-collapsed .hamburger {
     pointer-events: none;
 }
 
-/* -- Textarea: grows vertically, no border -- */
+/* -- Textarea: full width, grows vertically, no border -- */
 #input {
-    flex: 1;
+    width: 100%;
     border: none;
     outline: none;
     background: transparent;
     color: var(--fg);
     font-family: var(--user-font);
-    font-size: 16px;
+    font-size: 15px;
     line-height: 1.5;
     resize: none;
-    padding: 8px 0;
+    padding: 4px 4px 8px;
     min-height: 24px;
     max-height: 200px;
     overflow-y: auto;
@@ -665,13 +664,15 @@ body.sidebar-collapsed .hamburger {
     opacity: 0.7;
 }
 
-/* -- Buttons row: pill + settings + send -- */
+/* -- Buttons row: below textarea, right-aligned -- */
 #composer-buttons {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 2px;
     flex-shrink: 0;
-    padding-bottom: 2px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    padding-top: 2px;
 }
 
 
@@ -1299,6 +1300,78 @@ body.sidebar-collapsed .hamburger {
 #main.drag-active {
     outline: 2px dashed var(--accent);
     outline-offset: -4px;
+}
+
+
+/* --- Regenerate button ---
+   Shown inside error messages to retry the last prompt. */
+
+.regenerate-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 6px 14px;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    background: rgba(239, 68, 68, 0.08);
+    color: #ef4444;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    font-family: var(--user-font);
+}
+
+.regenerate-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+.regenerate-btn .material-symbols-rounded {
+    font-family: 'Material Symbols Rounded' !important;
+    font-size: 16px;
+}
+
+
+/* --- Thinking toggle: disabled state ---
+   Grayed out + no pointer when model doesn't support thinking. */
+
+.thinking-toggle.disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+
+/* --- Toast notification ---
+   Brief message at the top of the chat area. */
+
+.toast {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    background: #333;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    font-family: var(--user-font);
+}
+
+.toast.visible {
+    opacity: 1;
+}
+
+.toast.warn {
+    background: #92400e;
 }
 
 

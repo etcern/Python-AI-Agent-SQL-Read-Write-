@@ -21,7 +21,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from config import (
     DB_PATH, CONTEXT_WINDOW, UPLOAD_DIR, PROFILES,
     ModelConfig, create_model, list_ollama_models,
-    detect_profile, get_system_info,
+    detect_profile, get_system_info, model_supports_thinking,
 )
 from agents import AGENTS
 from chat_store import (
@@ -226,12 +226,19 @@ def api_send_message(chat_id: str, body: SendMessageBody):
         thinking_enabled=body.thinking_enabled,
     )
 
+    # -- Block thinking if model doesn't support it --
+    thinking = body.thinking_enabled
+    thinking_blocked = False
+    if thinking and not model_supports_thinking(chat["model"]):
+        thinking = False
+        thinking_blocked = True
+
     # -- Run the agent --
     try:
         agent = AGENTS[chat["agent"]](
             include_internet=body.internet_enabled,
             confirmation_mode=body.confirmation_mode,
-            thinking_enabled=body.thinking_enabled,
+            thinking_enabled=thinking,
         )
         temperature = AGENTS[chat["agent"]].DEFAULT_TEMPERATURE
 
@@ -266,6 +273,7 @@ def api_send_message(chat_id: str, body: SendMessageBody):
         "role": "assistant",
         "content": response,
         "tool_events": tool_events,
+        "thinking_blocked": thinking_blocked,
         "chat": get_chat(chat_id),
     }
 
@@ -293,19 +301,26 @@ def api_send_message_stream(chat_id: str, body: SendMessageBody):
     if len(user_msgs) == 1:
         update_chat(chat_id, title=_auto_title(body.content))
 
+    # -- Block thinking if model doesn't support it --
+    thinking = body.thinking_enabled
+    thinking_blocked = False
+    if thinking and not model_supports_thinking(chat["model"]):
+        thinking = False
+        thinking_blocked = True
+
     history_msgs = all_msgs[:-1]
     lc_history = _rebuild_langchain_history(
         chat["agent"], history_msgs,
         query=body.content,
         include_internet=body.internet_enabled,
         confirmation_mode=body.confirmation_mode,
-        thinking_enabled=body.thinking_enabled,
+        thinking_enabled=thinking,
     )
 
     agent = AGENTS[chat["agent"]](
         include_internet=body.internet_enabled,
         confirmation_mode=body.confirmation_mode,
-        thinking_enabled=body.thinking_enabled,
+        thinking_enabled=thinking,
     )
     temperature = AGENTS[chat["agent"]].DEFAULT_TEMPERATURE
     reasoning = agent.thinking_enabled if agent.thinking_enabled else None
@@ -321,6 +336,10 @@ def api_send_message_stream(chat_id: str, body: SendMessageBody):
     model_with_tools = agent.bind_tools(model)
 
     def event_generator():
+        # -- Notify frontend if thinking was blocked --
+        if thinking_blocked:
+            yield f"data: {json.dumps({'type': 'thinking_blocked', 'model': chat['model']})}\n\n"
+
         try:
             for event in agent.ask_stream(
                 query=body.content,
@@ -388,10 +407,16 @@ def api_list_agents():
 
 @app.get("/api/models")
 def api_list_models():
-    """List locally-available Ollama models.
+    """List locally-available Ollama models with thinking support info.
     Ref: https://github.com/ollama/ollama/blob/main/docs/api.md#list-local-models
     """
-    return {"models": list_ollama_models()}
+    names = list_ollama_models()
+    return {
+        "models": [
+            {"name": m, "thinks": model_supports_thinking(m)}
+            for m in names
+        ],
+    }
 
 
 @app.get("/api/db-info")

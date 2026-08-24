@@ -208,6 +208,33 @@ def create_model_for_agent(agent_name: str) -> BaseChatModel:
     return create_model(cfg)
 
 
+# --- Thinking model detection ---
+# Only certain model families support the reasoning/thinking parameter.
+# Ref: https://ollama.com/search?c=thinking
+
+THINKING_MODEL_PATTERNS = [
+    "qwen3",
+    "qwq",
+    "deepseek-r1",
+    "marco-o1",
+    "phi-4-reasoning",
+    "phi-4-mini-reasoning",
+]
+
+
+def model_supports_thinking(model_name: str) -> bool:
+    """Check if a model supports reasoning/thinking mode.
+
+    Compares the base name (before the colon tag) against known
+    thinking-capable model families.
+    """
+    base = model_name.lower().split(":")[0].strip()
+    # -- Also strip hf.co/ prefix and any path --
+    if "/" in base:
+        base = base.rsplit("/", 1)[-1]
+    return any(p in base for p in THINKING_MODEL_PATTERNS)
+
+
 # --- Ollama API ---
 # Ref: https://github.com/ollama/ollama/blob/main/docs/api.md#list-local-models
 

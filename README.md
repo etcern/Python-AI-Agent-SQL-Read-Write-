@@ -49,8 +49,9 @@ winget install UB-Mannheim.TesseractOCR   # Image OCR (Windows)
 
 ### Streaming and Thinking
 - **Streaming Responses**: Token-by-token output via Server-Sent Events. Tool calls show in real-time as the agent works.<br>
-- **Thinking Mode**: Chain-of-thought reasoning. Some agents (Reviewer, Planner) have it on by default. Toggle it on or off per chat with the brain icon in the composer bar. Needs a model that supports thinking (Qwen3, etc).<br>
-- **Thought Process Panel**: A collapsible panel on each response showing every tool call, reasoning, arguments, results, and severity badges (green/yellow/red).
+- **Thinking Mode**: Chain-of-thought reasoning for models that support it. The toggle auto-disables for models without thinking support. If toggled on with an unsupported model, the server silently falls back to normal mode and shows a warning. See the [Thinking Models](#thinking-models) section below for compatible models.<br>
+- **Thought Process Panel**: A collapsible panel on each response showing every tool call, reasoning, arguments, results, and severity badges (green/yellow/red).<br>
+- **Retry on Error**: Error messages include a Retry button to re-send the last prompt without retyping it.
 
 ### Files and Voice
 - **File Upload**: Upload files via the button or drag-and-drop them into the chat area.<br>
@@ -78,6 +79,27 @@ winget install UB-Mannheim.TesseractOCR   # Image OCR (Windows)
 | Translator | Translates text between languages | 7b+ | Execute |
 
 For complex tasks, use the **Planner** agent. It will delegate to the right specialists and have the Reviewer check the output.
+
+---
+
+## Thinking Models:
+
+Not all models support thinking/reasoning mode. The toggle in the composer bar auto-disables for unsupported models. If you want thinking, pull one of these:
+
+```bash
+ollama pull qwen3:8b         # Good balance of speed and quality
+ollama pull qwen3:14b        # Better reasoning, needs more RAM
+ollama pull qwen3:30b        # Best quality, needs 32GB+ RAM
+ollama pull deepseek-r1:8b   # Alternative thinking model
+ollama pull qwq:32b          # Alibaba's reasoning model, heavy
+```
+
+Links:
+- [Qwen3](https://ollama.com/library/qwen3) (recommended, multiple sizes from 0.6b to 235b)
+- [DeepSeek-R1](https://ollama.com/library/deepseek-r1) (distilled versions available)
+- [QwQ](https://ollama.com/library/qwq) (32b only)
+
+Models like `qwen2.5-coder`, `granite`, `llama3` do NOT support thinking. The app detects this automatically and skips the reasoning parameter.
 
 ---
 
