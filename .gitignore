@@ -5,6 +5,7 @@ __pycache__
 
 # --- Runtime data ---
 data/chat_history.db
+data/diagnostics.db
 logs/actions.txt
 workspace/
 /tools/__pycache__

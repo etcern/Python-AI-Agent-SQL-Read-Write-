@@ -35,6 +35,7 @@ TOOL_SEVERITY = {
     "github_file":       "low",
     "list_tables":       "low",
     "describe_table":    "low",
+    "memory_status":     "low",
     # -- Modify (yellow) --
     "delegate_task":     "medium",
     "save_knowledge":    "medium",
@@ -96,12 +97,13 @@ class BaseAgent:
         self.tool_events = []
 
     def get_tools(self) -> list:
-        """Base tools for every agent: read-only files + knowledge base.
+        """Base tools for every agent: read-only files + knowledge + diagnostics.
         When internet is enabled, also includes web search + GitHub.
         Override in subclasses and call super().get_tools() to keep these."""
         from tools.file_tools import get_file_read_tools
         from tools.knowledge import get_knowledge_tools
-        tools = get_file_read_tools() + get_knowledge_tools()
+        from tools.memory_profiler import get_memory_tools
+        tools = get_file_read_tools() + get_knowledge_tools() + get_memory_tools()
         if self.include_internet:
             from tools.web_search import get_web_tools
             from tools.github import get_github_tools

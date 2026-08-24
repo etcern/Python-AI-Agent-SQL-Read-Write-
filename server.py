@@ -32,6 +32,11 @@ from knowledge_store import (
     init_knowledge_db, save_entry, search_entries,
     list_entries, get_entry, delete_entry,
 )
+from tools.memory_profiler import (
+    init_diagnostics_db, start_profiling, take_snapshot,
+    compare_snapshots, get_memory_summary, get_snapshot_history,
+    get_snapshot_detail, check_memory_health, is_profiling,
+)
 
 
 # --- App setup ---
@@ -118,10 +123,13 @@ def _get_table_info() -> list[dict]:
     return result
 
 
-# --- Initialize DBs on startup ---
+# --- Initialize DBs + profiler on startup ---
 
 init_db()
 init_knowledge_db()
+init_diagnostics_db()
+start_profiling(nframes=10)
+take_snapshot(label="server_start", snapshot_type="baseline", save_to_db=True)
 
 
 # --- API: Chats ---
@@ -324,6 +332,15 @@ def api_send_message_stream(chat_id: str, body: SendMessageBody):
                 if event["type"] == "done":
                     add_message(chat_id, "assistant", event["content"])
                     event["chat"] = get_chat(chat_id)
+                    # -- Post-request memory snapshot (lightweight) --
+                    try:
+                        take_snapshot(
+                            label=f"req:{chat['agent']}",
+                            snapshot_type="request",
+                            save_to_db=True,
+                        )
+                    except Exception:
+                        pass
 
                 yield f"data: {json.dumps(event)}\n\n"
         except Exception as exc:
@@ -409,6 +426,58 @@ def api_profiles():
         },
         "detected": detect_profile(),
     }
+
+
+# --- API: Memory diagnostics ---
+# Ref: https://docs.python.org/3/library/tracemalloc.html
+
+
+class SnapshotBody(BaseModel):
+    label: str = "manual"
+
+
+@app.get("/api/debug/memory")
+def api_memory_status():
+    """Current memory usage, health check, and recent trend."""
+    return {
+        "summary": get_memory_summary(),
+        "health": check_memory_health(),
+        "history": get_snapshot_history(limit=10),
+    }
+
+
+@app.post("/api/debug/memory/snapshot")
+def api_take_snapshot(body: SnapshotBody):
+    """Take a named memory snapshot and store it."""
+    if not is_profiling():
+        start_profiling()
+    result = take_snapshot(label=body.label, snapshot_type="manual")
+    return result
+
+
+@app.get("/api/debug/memory/compare")
+def api_compare_snapshots():
+    """Compare the two most recent memory snapshots.
+
+    Take at least two snapshots first (POST /api/debug/memory/snapshot).
+    Shows which allocations grew, shrank, or appeared.
+    """
+    return compare_snapshots()
+
+
+@app.get("/api/debug/memory/history")
+def api_memory_history(limit: int = 30):
+    """Snapshot history from diagnostics.db for trend analysis."""
+    return get_snapshot_history(limit=limit)
+
+
+@app.get("/api/debug/memory/snapshot/{snapshot_id}")
+def api_get_snapshot(snapshot_id: int):
+    """Single snapshot with full allocation details."""
+    result = get_snapshot_detail(snapshot_id)
+    if not result:
+        raise HTTPException(404, "Snapshot not found")
+    return result
 
 
 # --- API: File uploads ---
