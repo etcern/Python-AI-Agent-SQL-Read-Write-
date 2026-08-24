@@ -6,12 +6,7 @@ Ref: https://docs.python.org/3/library/sqlite3.html
 import os
 import sqlite3
 from datetime import datetime
-
-
-# --- Database path ---
-
-DB_DIR = os.path.join(os.path.dirname(__file__), "data")
-CHAT_DB_PATH = os.path.join(DB_DIR, "chat_history.db")
+from config import CHAT_DB_PATH, DATA_DIR
 
 
 # --- Connection helper ---
@@ -20,7 +15,7 @@ def _connect() -> sqlite3.Connection:
     """Open a connection with row_factory for dict-like access.
     Ref: https://docs.python.org/3/library/sqlite3.html#sqlite3.Row
     """
-    os.makedirs(DB_DIR, exist_ok=True)
+    os.makedirs(DATA_DIR, exist_ok=True)
     conn = sqlite3.connect(CHAT_DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON;")

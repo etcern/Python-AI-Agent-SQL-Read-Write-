@@ -4,8 +4,7 @@ import sqlite3
 import random
 import os
 from datetime import datetime, timedelta
-
-DB_PATH = os.path.join(os.path.dirname(__file__), "data", "ecommerce.db")
+from config import DB_PATH
 
 CATEGORIES = [
     "Electronics", "Clothing", "Home & Kitchen", "Books",

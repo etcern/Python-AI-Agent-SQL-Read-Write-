@@ -15,9 +15,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from logging_utils import log_panel
 from action_logger import log_query, log_tool_call, log_tool_result, log_response, log_error
-
-MAX_ITERATIONS = 15
-MAX_TOOL_RETRIES = 2
+from config import MAX_ITERATIONS, MAX_TOOL_RETRIES, KNOWLEDGE_INJECTION_LIMIT, KNOWLEDGE_INJECTION_MAX_CHARS
 
 
 # --- Tool severity map ---
@@ -139,7 +137,7 @@ class BaseAgent:
 
     # --- Knowledge injection ---
 
-    def _get_relevant_knowledge(self, query: str, limit: int = 3) -> str:
+    def _get_relevant_knowledge(self, query: str, limit: int = KNOWLEDGE_INJECTION_LIMIT) -> str:
         """Search knowledge base for entries relevant to the query.
         Returns formatted context string, or empty string if nothing found.
         """
@@ -150,7 +148,7 @@ class BaseAgent:
                 return ""
             lines = ["RELEVANT KNOWLEDGE FROM PREVIOUS SESSIONS:"]
             for r in results:
-                lines.append(f"- [{r['topic']}]: {r['content'][:500]}")
+                lines.append(f"- [{r['topic']}]: {r['content'][:KNOWLEDGE_INJECTION_MAX_CHARS]}")
             return "\n".join(lines) + "\n"
         except Exception:
             return ""

@@ -12,19 +12,14 @@ Ref: https://www.sqlite.org/fts5.html
 import os
 import sqlite3
 from datetime import datetime
-
-
-# --- Database path ---
-
-DB_DIR = os.path.join(os.path.dirname(__file__), "data")
-KNOWLEDGE_DB_PATH = os.path.join(DB_DIR, "knowledge.db")
+from config import KNOWLEDGE_DB_PATH, DATA_DIR
 
 
 # --- Connection helper ---
 
 def _connect() -> sqlite3.Connection:
     """Open a connection with row_factory for dict-like access."""
-    os.makedirs(DB_DIR, exist_ok=True)
+    os.makedirs(DATA_DIR, exist_ok=True)
     conn = sqlite3.connect(KNOWLEDGE_DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn

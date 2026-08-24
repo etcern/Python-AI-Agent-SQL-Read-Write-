@@ -2,9 +2,7 @@
 
 import os
 from datetime import datetime
-
-LOG_DIR = os.path.join(os.path.dirname(__file__), "logs")
-LOG_FILE = os.path.join(LOG_DIR, "actions.txt")
+from config import LOG_DIR, LOG_FILE
 
 
 def _ensure_log_dir():

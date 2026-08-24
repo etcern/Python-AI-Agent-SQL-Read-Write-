@@ -12,12 +12,13 @@ import urllib.parse
 
 from langchain_core.tools import tool
 from logging_utils import log_panel
+from config import GITHUB_FILE_MAX_CHARS, GITHUB_USER_AGENT
 
 
 # --- HTTP helpers ---
 
 _HEADERS = {
-    "User-Agent": "QueryMaster/1.0",
+    "User-Agent": GITHUB_USER_AGENT,
     "Accept": "application/vnd.github.v3+json",
 }
 
@@ -38,7 +39,7 @@ def _github_api(url: str) -> dict | list:
 
 def _github_raw(url: str) -> str:
     """GET raw file content from raw.githubusercontent.com."""
-    req = urllib.request.Request(url, headers={"User-Agent": "QueryMaster/1.0"})
+    req = urllib.request.Request(url, headers={"User-Agent": GITHUB_USER_AGENT})
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
             return resp.read().decode("utf-8", errors="replace")
@@ -162,9 +163,9 @@ def github_file(owner: str, repo: str, path: str, branch: str = "main", reasonin
 
     content = _github_raw(url)
 
-    # -- Truncate very large files --
-    if len(content) > 15000:
-        content = content[:15000] + "\n\n... [truncated - file too large, fetch a specific section]"
+    # -- Truncate very large files (limit from config.py) --
+    if len(content) > GITHUB_FILE_MAX_CHARS:
+        content = content[:GITHUB_FILE_MAX_CHARS] + "\n\n... [truncated - file too large, fetch a specific section]"
 
     log_panel(f"{len(content)} chars", title="github_file - Fetched")
     return content

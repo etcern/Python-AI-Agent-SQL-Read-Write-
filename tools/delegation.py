@@ -11,9 +11,9 @@ delegated agents inherit the parent's settings.
 from langchain_core.tools import tool
 from logging_utils import log_panel
 from action_logger import log_tool_call, log_tool_result
+from config import MAX_DELEGATION_DEPTH, MAX_DELEGATION_ITERATIONS
 
 _delegation_depth = 0
-MAX_DEPTH = 3
 
 # -- Parent context passed to delegated agents --
 _delegation_ctx = {
@@ -67,7 +67,7 @@ def delegate_task(agent_name: str, task: str, reasoning: str = "") -> str:
         The other agent's complete response.
     """
     global _delegation_depth
-    if _delegation_depth >= MAX_DEPTH:
+    if _delegation_depth >= MAX_DELEGATION_DEPTH:
         return "Cannot delegate further - maximum depth reached."
 
     from agents import AGENTS
@@ -121,8 +121,8 @@ def delegate_task(agent_name: str, task: str, reasoning: str = "") -> str:
     try:
         result = agent.ask(
             task, history, model,
-            max_iterations=12,
-            include_delegation=(_delegation_depth < MAX_DEPTH),
+            max_iterations=MAX_DELEGATION_ITERATIONS,
+            include_delegation=(_delegation_depth < MAX_DELEGATION_DEPTH),
             num_ctx=num_ctx,
         )
     except Exception as e:

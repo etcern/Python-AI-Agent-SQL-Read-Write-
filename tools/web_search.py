@@ -15,12 +15,13 @@ from html.parser import HTMLParser
 from langchain_community.tools import DuckDuckGoSearchResults
 from langchain_core.tools import tool
 from logging_utils import log_panel
+from config import WEB_SEARCH_NUM_RESULTS, WEB_READ_MAX_CHARS
 
 
 # --- Shared search instance ---
-# max_results bumped so agents get enough material to work with.
+# num_results configured in config.py (WEB_SEARCH_NUM_RESULTS).
 
-_ddg = DuckDuckGoSearchResults(num_results=6)
+_ddg = DuckDuckGoSearchResults(num_results=WEB_SEARCH_NUM_RESULTS)
 
 
 # --- HTML text extractor ---
@@ -54,7 +55,7 @@ class _HTMLTextExtractor(HTMLParser):
         return "\n".join(line for line in lines if line)
 
 
-def _extract_page_text(html: str, max_chars: int = 12000) -> str:
+def _extract_page_text(html: str, max_chars: int = WEB_READ_MAX_CHARS) -> str:
     """Convert HTML to readable text, capped at max_chars."""
     extractor = _HTMLTextExtractor()
     try:

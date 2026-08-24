@@ -21,6 +21,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 
 from config import (
     DB_PATH, CONTEXT_WINDOW, UPLOAD_DIR, PROFILES,
+    SERVER_HOST, SERVER_PORT, SERVER_RELOAD, PROFILER_NFRAMES,
     ModelConfig, create_model, list_ollama_models,
     detect_profile, get_system_info, model_supports_thinking,
 )
@@ -161,7 +162,7 @@ def _get_table_info() -> list[dict]:
 init_db()
 init_knowledge_db()
 init_diagnostics_db()
-start_profiling(nframes=10)
+start_profiling(nframes=PROFILER_NFRAMES)
 take_snapshot(label="server_start", snapshot_type="baseline", save_to_db=True)
 
 
@@ -707,4 +708,4 @@ def serve_index():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("server:app", host="127.0.0.1", port=8501, reload=True)
+    uvicorn.run("server:app", host=SERVER_HOST, port=SERVER_PORT, reload=SERVER_RELOAD)

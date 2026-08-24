@@ -17,26 +17,23 @@ from datetime import datetime
 
 from langchain_core.tools import tool
 from logging_utils import log_panel
-
-
-# --- Database path ---
-
-DB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
-DIAGNOSTICS_DB_PATH = os.path.join(DB_DIR, "diagnostics.db")
+from config import (
+    DATA_DIR, DIAGNOSTICS_DB_PATH, PROFILER_MAX_SNAPSHOTS,
+    PROFILER_RSS_WARN_MB, PROFILER_RSS_ALERT_MB, PROFILER_GROWTH_WARN_MB,
+)
 
 
 # --- In-memory snapshot store ---
 # Keeps the last N snapshots for quick comparison without DB round-trips.
 
 _snapshots: list[dict] = []
-MAX_SNAPSHOTS = 20
 
 
 # --- Database setup ---
 
 def _connect() -> sqlite3.Connection:
     """Open diagnostics.db with dict-like row access."""
-    os.makedirs(DB_DIR, exist_ok=True)
+    os.makedirs(DATA_DIR, exist_ok=True)
     conn = sqlite3.connect(DIAGNOSTICS_DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
@@ -163,7 +160,7 @@ def take_snapshot(label: str = "manual",
 
     # -- Keep in memory for quick comparison --
     _snapshots.append({"summary": summary, "snapshot": snap})
-    if len(_snapshots) > MAX_SNAPSHOTS:
+    if len(_snapshots) > PROFILER_MAX_SNAPSHOTS:
         _snapshots.pop(0)
 
     # -- Persist to DB --
@@ -321,20 +318,20 @@ def check_memory_health() -> dict:
     status = "ok"
     warnings = []
 
-    # -- RSS thresholds --
-    if rss > 1024:
+    # -- RSS thresholds (from config.py) --
+    if rss > PROFILER_RSS_ALERT_MB:
         status = "alert"
-        warnings.append(f"RSS is {rss}MB - exceeds 1GB threshold")
-    elif rss > 512:
+        warnings.append(f"RSS is {rss}MB - exceeds {PROFILER_RSS_ALERT_MB}MB threshold")
+    elif rss > PROFILER_RSS_WARN_MB:
         status = "warning"
-        warnings.append(f"RSS is {rss}MB - above 512MB")
+        warnings.append(f"RSS is {rss}MB - above {PROFILER_RSS_WARN_MB}MB")
 
     # -- Check for memory growth trend --
     if len(_snapshots) >= 3:
         recent = [s["summary"]["traced_mb"] for s in _snapshots[-3:]]
         if all(recent[i] < recent[i + 1] for i in range(len(recent) - 1)):
             growth = recent[-1] - recent[0]
-            if growth > 10:
+            if growth > PROFILER_GROWTH_WARN_MB:
                 status = "warning" if status == "ok" else status
                 warnings.append(
                     f"Traced memory grew {growth:.1f}MB over last "

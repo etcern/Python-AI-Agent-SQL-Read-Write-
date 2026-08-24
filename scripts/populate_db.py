@@ -27,8 +27,7 @@ from datetime import datetime, timedelta
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
 
-DB_DIR = os.path.join(PROJECT_ROOT, "data")
-DB_PATH = os.path.join(DB_DIR, "ecommerce.db")
+from config import DB_PATH, DATA_DIR
 
 
 # --- Schema ---
@@ -241,7 +240,7 @@ def generate_orders(n: int, customer_ids: list[int],
 # --- Database operations ---
 
 def connect() -> sqlite3.Connection:
-    os.makedirs(DB_DIR, exist_ok=True)
+    os.makedirs(DATA_DIR, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON;")
