@@ -995,6 +995,32 @@ body.sidebar-collapsed .hamburger {
 }
 
 
+/* --- Attachment chips on user messages --- */
+
+.msg-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.attachment-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.attachment-chip .material-symbols-rounded {
+    font-family: 'Material Symbols Rounded' !important;
+}
+
+
 /* --- Thought process panel ---
    Collapsible section inside assistant messages showing tool calls,
    reasoning, results, and severity badges.

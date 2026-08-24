@@ -29,6 +29,7 @@ let isRecording = false;
 let speechRecognition = null;
 let lastSentMessage = "";
 let modelThinkingSupport = {};
+let pendingAttachments = [];
 
 
 /* --- Settings (persisted to localStorage) ---
@@ -295,7 +296,7 @@ function renderMessages(msgs) {
     scrollToBottom();
 }
 
-function appendMessage(role, content, toolEvents = []) {
+function appendMessage(role, content, toolEvents = [], attachedFiles = []) {
     $welcome.classList.add("hidden");
 
     const row = document.createElement("div");
@@ -328,7 +329,21 @@ function appendMessage(role, content, toolEvents = []) {
             addCopyButtons(contentDiv);
         }
     } else {
-        body.textContent = content;
+        /* -- Show attached file badges on user messages -- */
+        if (attachedFiles.length > 0) {
+            const filesBar = document.createElement("div");
+            filesBar.className = "msg-attachments";
+            for (const f of attachedFiles) {
+                const chip = document.createElement("span");
+                chip.className = "attachment-chip";
+                chip.innerHTML = `<span class="material-symbols-rounded" style="font-size:14px">description</span> ${escapeHtml(f.name)}`;
+                filesBar.appendChild(chip);
+            }
+            body.appendChild(filesBar);
+        }
+        const textNode = document.createElement("div");
+        textNode.textContent = content;
+        body.appendChild(textNode);
     }
 
     row.appendChild(avatar);
@@ -559,9 +574,19 @@ async function sendMessage(overrideText) {
         $input.style.height = "auto";
     }
 
+    /* -- Build content with file attachments -- */
+    let messageContent = text;
+    let attachedFiles = [];
+    if (pendingAttachments.length > 0) {
+        attachedFiles = [...pendingAttachments];
+        const fileList = attachedFiles.map(f => `uploads/${f.name}`).join(", ");
+        messageContent = `[Attached files: ${fileList}]\n\n${text}`;
+        pendingAttachments = [];
+    }
+
     /* -- Show user message immediately (skip if retrying) -- */
     if (!overrideText) {
-        appendMessage("user", text);
+        appendMessage("user", text, [], attachedFiles);
     }
     scrollToBottom();
 
@@ -570,7 +595,7 @@ async function sendMessage(overrideText) {
 
     const settings = loadSettings();
     const payload = {
-        content: text,
+        content: messageContent,
         context_window: settings.contextWindow,
         internet_enabled: internetEnabled,
         confirmation_mode: confirmationMode,
@@ -1021,9 +1046,17 @@ $micBtn.addEventListener("click", (e) => {
         speechRecognition.stop();
     } else {
         try {
+            /* -- Abort any stuck session before starting fresh -- */
+            try { speechRecognition.abort(); } catch {}
             speechRecognition.start();
         } catch (err) {
-            showToast(`Mic error: ${err.message}`, "warn");
+            /* -- Handle "already started" gracefully -- */
+            if (err.message && err.message.includes("already started")) {
+                speechRecognition.stop();
+                showToast("Mic reset. Click again to start.", "warn");
+            } else {
+                showToast(`Mic error: ${err.message}`, "warn");
+            }
         }
     }
 });
@@ -1283,8 +1316,16 @@ async function uploadFile(file) {
             body: formData,
         });
         if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+        const data = await res.json();
+        /* -- Track as pending attachment for next message -- */
+        pendingAttachments.push({
+            name: data.name,
+            size: data.size,
+        });
+        showToast(`Uploaded: ${data.name}`);
     } catch (e) {
         console.error("Upload error:", e);
+        showToast(`Upload failed: ${e.message}`, "warn");
     }
 }
 

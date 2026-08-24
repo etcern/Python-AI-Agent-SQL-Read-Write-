@@ -41,7 +41,8 @@ TOOL_SEVERITY = {
     "save_knowledge":    "medium",
     "execute_sql":       "medium",
     # -- Write (red) --
-    "write_file":        "high",
+    "write_file":          "high",
+    "create_spreadsheet":  "high",
 }
 
 
