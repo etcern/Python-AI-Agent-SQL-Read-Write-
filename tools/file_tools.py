@@ -90,6 +90,17 @@ def write_file(file_path: str, content: str, reasoning: str = "") -> str:
             f"Cannot write {ext} files with write_file (it writes plain text). "
             "Use create_spreadsheet instead for Excel files."
         )
+    if ext in (".pdf", ".docx", ".doc", ".pptx", ".ppt", ".zip", ".tar", ".gz",
+               ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".mp3", ".mp4",
+               ".wav", ".avi", ".exe", ".dll", ".bin"):
+        # -- Suggest the right format --
+        alt = {
+            ".pdf": "Use .md or .txt instead (write_file only writes plain text).",
+            ".docx": "Use .md or .txt instead (write_file only writes plain text).",
+            ".doc": "Use .md or .txt instead (write_file only writes plain text).",
+        }
+        hint = alt.get(ext, "write_file only writes plain text files.")
+        return f"Cannot create {ext} files with write_file - it would be a fake binary. {hint}"
 
     full_path = os.path.join(WORKSPACE_DIR, file_path)
     os.makedirs(os.path.dirname(full_path), exist_ok=True)

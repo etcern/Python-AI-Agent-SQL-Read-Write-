@@ -83,7 +83,12 @@ RULES:
 
 Current date: {current_datetime}
 
-Response format: Markdown. Use step numbers and status indicators."""
+FORMATTING:
+- NEVER use emojis. Use Markdown formatting instead: **bold**, headings, bullet lists, numbered lists.
+- Use step numbers and status indicators (DONE, PENDING, FAILED) instead of emoji checkmarks.
+- For documents: delegate file creation as .md (Markdown) or .txt. NEVER .pdf or .docx - write_file only writes plain text.
+
+Response format: Markdown."""
 
     def get_tools(self) -> list:
         # -- Read-only + knowledge + delegation (no file writes) --

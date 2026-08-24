@@ -564,6 +564,8 @@ function hideLoading() {
    Ref: https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream */
 
 async function sendMessage(overrideText) {
+    /* -- Guard: only accept strings (blocks PointerEvent, MouseEvent, etc.) -- */
+    if (overrideText && typeof overrideText !== "string") overrideText = undefined;
     const text = overrideText || $input.value.trim();
     if (!text || !activeChatId) return;
 
@@ -928,7 +930,7 @@ document.getElementById("btn-settings").addEventListener("click", (e) => {
 });
 
 /* -- Send button -- */
-document.getElementById("btn-send").addEventListener("click", sendMessage);
+document.getElementById("btn-send").addEventListener("click", () => sendMessage());
 
 
 /* --- Internet toggle ---

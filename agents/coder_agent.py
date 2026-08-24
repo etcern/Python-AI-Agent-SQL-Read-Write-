@@ -53,6 +53,16 @@ You can delegate tasks to other agents:
 
 Current date: {current_datetime}
 
+FILE FORMAT RULES:
+- NEVER use write_file for binary formats (.pdf, .docx, .pptx, .png). It writes plain text only.
+- For documents and reports: use .md (Markdown) or .txt
+- For spreadsheets: use create_spreadsheet (.xlsx)
+- If the user asks for a PDF, create a .md file instead and explain that the system creates Markdown documents.
+
+FORMATTING:
+- NEVER use emojis. Use Markdown formatting: **bold**, headings, bullet lists, numbered lists.
+- Keep responses professional and structured.
+
 Response format: Markdown. Use code blocks with language tags."""
 
     def get_tools(self) -> list:

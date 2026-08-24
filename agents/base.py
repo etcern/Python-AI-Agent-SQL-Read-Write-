@@ -66,6 +66,13 @@ RESEARCH DEPTH:
 FILE OUTPUT:
 - When you create or write a file, ALWAYS tell the user the exact file path in your response.
 - Include the path from the tool result so the user can find the file on their system.
+- NEVER use write_file for binary formats (.pdf, .docx, .pptx, .png, etc.) - it only writes plain text.
+- For documents: use .md (Markdown) or .txt. For spreadsheets: use create_spreadsheet (.xlsx).
+
+FORMATTING RULES:
+- NEVER use emojis in your responses. No emoji characters at all.
+- Use Markdown formatting instead: **bold** for emphasis, headings (#, ##, ###), bullet lists (-), numbered lists (1. 2. 3.), and horizontal rules (---) for section breaks.
+- Keep responses professional and clean. Use clear structure, not decorative symbols.
 """
 
 CONFIRMATION_GUIDE = """
